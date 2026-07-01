@@ -1252,6 +1252,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     gcalRestoreToken();
     renderGcalCard();
     drawCalendar();
+    if (!gcalConnected() && gcalGranted) gcalEnsureToken().then((ok) => { if (ok) { renderGcalCard(); gcalFetchMonth(calState.year, calState.month).then(() => drawCalendar()); } });
   }
   function drawCalendar() {
     const { year, month } = calState;
@@ -1327,35 +1328,54 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   }
   // ===== Integração Google Calendar (GIS token flow + REST v3) =====
   var gcalToken = null, gcalTokenClient = null, gcalExpiry = 0;
-  var gcalCache = {};
+  var gcalCache = {}, gcalGranted = false, gcalPending = null;
   function gcalCid() { return ((storage_default.get("settings") || {}).googleClientId || "").trim(); }
   function gcalReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
   function gcalConnected() { return !!gcalToken && Date.now() < gcalExpiry; }
   function gcalMonthKey(y, m) { return y + "-" + String(m + 1).padStart(2, "0"); }
   function gcalRestoreToken() {
-    try { const s = JSON.parse(localStorage.getItem("rpg_gcal_tok") || "null"); if (s && s.t && Date.now() < s.e) { gcalToken = s.t; gcalExpiry = s.e; } } catch (e) {}
+    try {
+      gcalGranted = localStorage.getItem("rpg_gcal_granted") === "1";
+      const s = JSON.parse(localStorage.getItem("rpg_gcal_tok") || "null");
+      if (s && s.t && Date.now() < s.e) { gcalToken = s.t; gcalExpiry = s.e; }
+    } catch (e) {}
   }
-  function gcalInit() {
+  function gcalEnsureClient() {
+    if (gcalTokenClient) return true;
     const cid = gcalCid();
-    if (!cid) { alert("Primeiro adicione o Client ID do Google em ⚙️ Config."); return false; }
-    if (!gcalReady()) { alert("O Google ainda est\xE1 carregando. Espere alguns segundos e tente de novo."); return false; }
+    if (!cid || !gcalReady()) return false;
     gcalTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: cid,
       scope: "https://www.googleapis.com/auth/calendar.events",
       callback: (resp) => {
-        if (resp && resp.access_token) {
+        const ok = !!(resp && resp.access_token);
+        if (ok) {
           gcalToken = resp.access_token;
           gcalExpiry = Date.now() + (Number(resp.expires_in || 3600) - 60) * 1e3;
-          gcalCache = {};
-          try { localStorage.setItem("rpg_gcal_tok", JSON.stringify({ t: gcalToken, e: gcalExpiry })); } catch (e) {}
-          if (window._afterGcalConnect) window._afterGcalConnect();
+          gcalGranted = true; gcalCache = {};
+          try { localStorage.setItem("rpg_gcal_tok", JSON.stringify({ t: gcalToken, e: gcalExpiry })); localStorage.setItem("rpg_gcal_granted", "1"); } catch (e) {}
         }
+        const p = gcalPending; gcalPending = null;
+        if (p) p(ok);
+        if (ok && window._afterGcalConnect) window._afterGcalConnect();
       }
     });
     return true;
   }
-  function gcalConnect() { if (gcalInit()) gcalTokenClient.requestAccessToken({ prompt: gcalConnected() ? "" : "consent" }); }
-  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalCache = {}; try { localStorage.removeItem("rpg_gcal_tok"); } catch (e) {} }
+  function gcalRequest(interactive) {
+    return new Promise((resolve) => {
+      if (!gcalEnsureClient()) { if (interactive) alert("Adicione o Client ID do Google em ⚙️ Config e aguarde o Google carregar."); resolve(false); return; }
+      gcalPending = resolve;
+      try { gcalTokenClient.requestAccessToken({ prompt: interactive ? "consent" : "" }); } catch (e) { gcalPending = null; resolve(false); }
+    });
+  }
+  function gcalConnect() { gcalRequest(!gcalGranted); }
+  async function gcalEnsureToken() {
+    if (gcalConnected()) return true;
+    if (!gcalGranted || !gcalCid()) return false;
+    return await gcalRequest(false);
+  }
+  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalGranted = false; gcalCache = {}; try { localStorage.removeItem("rpg_gcal_tok"); localStorage.removeItem("rpg_gcal_granted"); } catch (e) {} }
   function gcalNormalize(it) {
     const startISO = it.start && (it.start.dateTime || (it.start.date ? it.start.date + "T00:00:00" : null));
     const endISO = it.end && (it.end.dateTime || (it.end.date ? it.end.date + "T00:00:00" : null));
@@ -1369,14 +1389,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   }
   function gcalMonthCached(y, m) { return gcalCache[gcalMonthKey(y, m)] || []; }
   async function gcalFetchMonth(y, m) {
-    if (!gcalConnected()) return [];
+    if (!(await gcalEnsureToken())) return [];
     const key = gcalMonthKey(y, m);
     if (gcalCache[key]) return gcalCache[key];
     const timeMin = new Date(y, m, 1).toISOString(), timeMax = new Date(y, m + 1, 1).toISOString();
     try {
       const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=" + encodeURIComponent(timeMin) + "&timeMax=" + encodeURIComponent(timeMax);
       const res = await fetch(url, { headers: { Authorization: "Bearer " + gcalToken } });
-      if (res.status === 401) { gcalDisconnect(); if (window._afterGcalConnect === void 0) {} renderGcalCard(); return []; }
+      if (res.status === 401) { gcalToken = null; gcalExpiry = 0; renderGcalCard(); return []; }
       if (!res.ok) return [];
       const data = await res.json();
       gcalCache[key] = (data.items || []).map(gcalNormalize);
@@ -1385,7 +1405,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   }
   function addHourStr(hm) { let p = (hm || "09:00").split(":").map(Number); let h = (p[0] + 1) % 24; return String(h).padStart(2, "0") + ":" + String(p[1]).padStart(2, "0"); }
   async function gcalCreate(ev) {
-    if (!gcalConnected()) return null;
+    if (!(await gcalEnsureToken())) return null;
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const body = { summary: ev.name, description: ev.notes || "", location: ev.location || "" };
     if (ev.allDay) {
