@@ -480,7 +480,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   border-radius:10px; color:var(--muted); cursor:pointer; font-size:16px;
 }
 .notes-date-del-btn:hover { color:var(--red); border-color:var(--red); }
-.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:calc(100vh - 240px); }
 .notes-panel { display:flex; flex-direction:column; overflow:hidden; }
 #notes-checklist-panel { max-height:260px; overflow-y:auto; }
 .note-date-item { padding:8px 12px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--muted); transition:all .2s; margin-bottom:4px; border-left:3px solid transparent; }
@@ -493,7 +493,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 .note-toolbar { display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap; }
 .note-toolbar button { background:var(--surface2); border:1px solid var(--border); color:var(--muted); border-radius:6px; padding:3px 8px; font-size:12px; cursor:pointer; }
 .note-toolbar button:hover { color:var(--text); border-color:var(--primary); }
-.note-textarea { flex:1; font-family:'Consolas',monospace; font-size:14px; line-height:1.7; min-height:150px; }
+.note-textarea { flex:1; font-family:'Consolas',monospace; font-size:14px; line-height:1.7; min-height:280px; }
 
 /* CHECKLIST */
 .checklist-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; margin-bottom:4px; background:var(--surface2); transition:all .2s; }
@@ -793,7 +793,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   /* grids empilham no celular pra não vazar da tela */
   .grid-3, .grid-2, .attrs-grid { grid-template-columns: 1fr; }
   .fin-summary-grid { grid-template-columns: 1fr 1fr; }
-  .notes-layout, .knowledge-layout, .notes-right { grid-template-columns: 1fr; height: auto; }
+  .notes-layout, .knowledge-layout, .notes-right { grid-template-columns: 1fr; height: auto; min-height: 0; }
   .cards-grid, .rewards-grid, .books-grid { grid-template-columns: 1fr; }
 }
   </style>
