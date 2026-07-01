@@ -1342,11 +1342,18 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       if (s && s.t && Date.now() < s.e) { gcalToken = s.t; gcalExpiry = s.e; }
     } catch (e) {}
   }
+  function gcalHint() { try { return localStorage.getItem("rpg_gcal_hint") || ""; } catch (e) { return ""; } }
+  async function gcalLearnHint() {
+    try {
+      const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary", { headers: { Authorization: "Bearer " + gcalToken } });
+      if (res.ok) { const d = await res.json(); if (d && d.id) { localStorage.setItem("rpg_gcal_hint", d.id); gcalTokenClient = null; } }
+    } catch (e) {}
+  }
   function gcalEnsureClient() {
     if (gcalTokenClient) return true;
     const cid = gcalCid();
     if (!cid || !gcalReady()) return false;
-    gcalTokenClient = google.accounts.oauth2.initTokenClient({
+    const cfg = {
       client_id: cid,
       scope: "https://www.googleapis.com/auth/calendar.events",
       callback: (resp) => {
@@ -1356,12 +1363,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
           gcalExpiry = Date.now() + (Number(resp.expires_in || 3600) - 60) * 1e3;
           gcalGranted = true; gcalCache = {};
           try { localStorage.setItem("rpg_gcal_tok", JSON.stringify({ t: gcalToken, e: gcalExpiry })); localStorage.setItem("rpg_gcal_granted", "1"); } catch (e) {}
+          if (!gcalHint()) gcalLearnHint();
         }
         const p = gcalPending; gcalPending = null;
         if (p) p(ok);
         if (ok && window._afterGcalConnect) window._afterGcalConnect();
       }
-    });
+    };
+    const h = gcalHint();
+    if (h) cfg.hint = h;
+    gcalTokenClient = google.accounts.oauth2.initTokenClient(cfg);
     return true;
   }
   function gcalRequest(interactive) {
@@ -1381,7 +1392,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     if (!gcalEnsureClient()) return;
     try { gcalTokenClient.requestAccessToken({ prompt: "" }); } catch (e) {}
   }
-  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalGranted = false; gcalCache = {}; try { localStorage.removeItem("rpg_gcal_tok"); localStorage.removeItem("rpg_gcal_granted"); } catch (e) {} }
+  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalGranted = false; gcalCache = {}; gcalTokenClient = null; try { localStorage.removeItem("rpg_gcal_tok"); localStorage.removeItem("rpg_gcal_granted"); localStorage.removeItem("rpg_gcal_hint"); } catch (e) {} }
   function gcalNormalize(it) {
     const startISO = it.start && (it.start.dateTime || (it.start.date ? it.start.date + "T00:00:00" : null));
     const endISO = it.end && (it.end.dateTime || (it.end.date ? it.end.date + "T00:00:00" : null));
