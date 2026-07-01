@@ -1428,8 +1428,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       if (!res.ok) return [];
       const data = await res.json();
       gcalCache[key] = (data.items || []).map(gcalNormalize);
+      gcalReconcile(y, m, gcalCache[key]);
       return gcalCache[key];
     } catch (e) { return []; }
+  }
+  function gcalReconcile(y, m, googList) {
+    const gids = new Set(googList.map((e) => e.gid));
+    const prefix = gcalMonthKey(y, m);
+    storage_default.update("events", (evs) => evs.filter((e) => !(e.gid && e.date && e.date.slice(0, 7) === prefix && !gids.has(e.gid))));
   }
   function addHourStr(hm) { let p = (hm || "09:00").split(":").map(Number); let h = (p[0] + 1) % 24; return String(h).padStart(2, "0") + ":" + String(p[1]).padStart(2, "0"); }
   async function gcalCreate(ev) {
