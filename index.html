@@ -1300,8 +1300,9 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     renderEvents(dateStr);
   }
   function renderEvents(dateStr) {
-    const local = (storage_default.get("events") || []).filter((e) => e.date === dateStr);
     const goog = gcalMonthCached(calState.year, calState.month).filter((e) => e.date === dateStr);
+    const gset = new Set(goog.map((e) => e.gid));
+    const local = (storage_default.get("events") || []).filter((e) => e.date === dateStr && !(e.gid && gset.has(e.gid)));
     const events = [...local, ...goog].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
     const label = document.getElementById("cal-events-title");
     const list = document.getElementById("event-list");
