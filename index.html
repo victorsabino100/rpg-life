@@ -12,6 +12,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RPG Life">
+  <!-- Google Identity Services (login p/ Google Calendar) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
 :root {
   --bg: #0d0d14;
@@ -192,6 +194,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 }
 .modal-close:hover { color: var(--text); }
 .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.ev-title-input { font-size: 20px !important; font-weight: 600; padding: 8px 4px !important; border: none !important; border-bottom: 2px solid var(--border) !important; border-radius: 0 !important; background: transparent !important; }
+.ev-title-input:focus { border-bottom-color: var(--primary) !important; outline: none; }
+.ev-check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); margin: 4px 0 14px; cursor: pointer; }
+.ev-check input { width: 16px; height: 16px; cursor: pointer; }
 
 /* BADGES */
 .badge {
@@ -1222,15 +1228,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         <div id="event-list"></div>
       </div>
     </div>
-    <div class="card" style="margin-top:0">
-      <div class="card-title">\u{1F4CC} Integra\xE7\xE3o Google Calendar</div>
-      <p style="color:var(--muted);font-size:13px;line-height:1.6">
-        Para sincronizar com o Google Calendar, adicione seus eventos manualmente aqui
-        ou utilize o <b>Google Calendar API</b> configurando suas credenciais nas configura\xE7\xF5es.
-        <br><br>
-        <a href="https://calendar.google.com" target="_blank" style="color:var(--primary-l)">Abrir Google Calendar \u2197</a>
-      </p>
-    </div>
+    <div class="card" style="margin-top:0" id="gcal-card"></div>
   `;
     window._calNav = (dir) => {
       calState.month += dir;
@@ -1247,6 +1245,12 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     window._openAddEvent = openAddEventModal;
     window._selectDay = selectDay;
     window._deleteEvent = deleteEvent;
+    window._gcalConnect = () => gcalConnect();
+    window._gcalDisconnect = () => { gcalDisconnect(); renderGcalCard(); drawCalendar(); };
+    window._gcalRefresh = () => { gcalCache = {}; gcalFetchMonth(calState.year, calState.month).then(() => { drawCalendar(); renderGcalCard(); }); };
+    window._afterGcalConnect = () => { gcalFetchMonth(calState.year, calState.month).then(() => { drawCalendar(); renderGcalCard(); }); };
+    gcalRestoreToken();
+    renderGcalCard();
     drawCalendar();
   }
   function drawCalendar() {
@@ -1269,7 +1273,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     const header = document.getElementById("cal-days-header");
     header.innerHTML = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "S\xE1b"].map((d) => `<div class="cal-header">${d}</div>`).join("");
     const events = storage_default.get("events") || [];
-    const evDates = new Set(events.map((e) => e.date));
+    const evDates = new Set([...events.map((e) => e.date), ...gcalMonthCached(year, month).map((e) => e.date)]);
     const first = new Date(year, month, 1).getDay();
     const days = new Date(year, month + 1, 0).getDate();
     const prevDays = new Date(year, month, 0).getDate();
@@ -1288,6 +1292,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     }
     document.getElementById("cal-days").innerHTML = html;
     if (calState.selected) renderEvents(calState.selected);
+    if (gcalConnected() && !gcalCache[gcalMonthKey(year, month)]) gcalFetchMonth(year, month).then(() => drawCalendar());
   }
   function selectDay(dateStr) {
     calState.selected = dateStr;
@@ -1295,7 +1300,9 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     renderEvents(dateStr);
   }
   function renderEvents(dateStr) {
-    const events = (storage_default.get("events") || []).filter((e) => e.date === dateStr);
+    const local = (storage_default.get("events") || []).filter((e) => e.date === dateStr);
+    const goog = gcalMonthCached(calState.year, calState.month).filter((e) => e.date === dateStr);
+    const events = [...local, ...goog].sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99"));
     const label = document.getElementById("cal-events-title");
     const list = document.getElementById("event-list");
     if (!label || !list) return;
@@ -1306,9 +1313,9 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     }
     list.innerHTML = events.map((e) => `
     <div class="event-item">
-      <span class="event-time">${e.time || "--:--"}</span>
-      <span class="event-name">${e.name}</span>
-      <button class="event-delete" onclick="window._deleteEvent('${e.id}')">\u2715</button>
+      <span class="event-time">${e.allDay ? "Dia todo" : e.time || "--:--"}</span>
+      <span class="event-name">${e.name}${e.google ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle">Google</span>` : ""}</span>
+      ${e.google ? "" : `<button class="event-delete" onclick="window._deleteEvent('${e.id}')">\u2715</button>`}
     </div>
   `).join("");
   }
@@ -1317,44 +1324,152 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     if (calState.selected) renderEvents(calState.selected);
     drawCalendar();
   }
+  // ===== Integração Google Calendar (GIS token flow + REST v3) =====
+  var gcalToken = null, gcalTokenClient = null, gcalExpiry = 0;
+  var gcalCache = {};
+  function gcalCid() { return ((storage_default.get("settings") || {}).googleClientId || "").trim(); }
+  function gcalReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
+  function gcalConnected() { return !!gcalToken && Date.now() < gcalExpiry; }
+  function gcalMonthKey(y, m) { return y + "-" + String(m + 1).padStart(2, "0"); }
+  function gcalRestoreToken() {
+    try { const s = JSON.parse(localStorage.getItem("rpg_gcal_tok") || "null"); if (s && s.t && Date.now() < s.e) { gcalToken = s.t; gcalExpiry = s.e; } } catch (e) {}
+  }
+  function gcalInit() {
+    const cid = gcalCid();
+    if (!cid) { alert("Primeiro adicione o Client ID do Google em ⚙️ Config."); return false; }
+    if (!gcalReady()) { alert("O Google ainda est\xE1 carregando. Espere alguns segundos e tente de novo."); return false; }
+    gcalTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: "https://www.googleapis.com/auth/calendar.events",
+      callback: (resp) => {
+        if (resp && resp.access_token) {
+          gcalToken = resp.access_token;
+          gcalExpiry = Date.now() + (Number(resp.expires_in || 3600) - 60) * 1e3;
+          gcalCache = {};
+          try { localStorage.setItem("rpg_gcal_tok", JSON.stringify({ t: gcalToken, e: gcalExpiry })); } catch (e) {}
+          if (window._afterGcalConnect) window._afterGcalConnect();
+        }
+      }
+    });
+    return true;
+  }
+  function gcalConnect() { if (gcalInit()) gcalTokenClient.requestAccessToken({ prompt: gcalConnected() ? "" : "consent" }); }
+  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalCache = {}; try { localStorage.removeItem("rpg_gcal_tok"); } catch (e) {} }
+  function gcalNormalize(it) {
+    const startISO = it.start && (it.start.dateTime || (it.start.date ? it.start.date + "T00:00:00" : null));
+    const endISO = it.end && (it.end.dateTime || (it.end.date ? it.end.date + "T00:00:00" : null));
+    const timed = !!(it.start && it.start.dateTime);
+    return {
+      id: "g_" + it.id, gid: it.id, google: true, name: it.summary || "(sem t\xEDtulo)",
+      date: startISO ? startISO.slice(0, 10) : "", time: timed ? startISO.slice(11, 16) : "",
+      endTime: it.end && it.end.dateTime ? endISO.slice(11, 16) : "", allDay: !timed,
+      location: it.location || "", notes: it.description || "", link: it.htmlLink || ""
+    };
+  }
+  function gcalMonthCached(y, m) { return gcalCache[gcalMonthKey(y, m)] || []; }
+  async function gcalFetchMonth(y, m) {
+    if (!gcalConnected()) return [];
+    const key = gcalMonthKey(y, m);
+    if (gcalCache[key]) return gcalCache[key];
+    const timeMin = new Date(y, m, 1).toISOString(), timeMax = new Date(y, m + 1, 1).toISOString();
+    try {
+      const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin=" + encodeURIComponent(timeMin) + "&timeMax=" + encodeURIComponent(timeMax);
+      const res = await fetch(url, { headers: { Authorization: "Bearer " + gcalToken } });
+      if (res.status === 401) { gcalDisconnect(); if (window._afterGcalConnect === void 0) {} renderGcalCard(); return []; }
+      if (!res.ok) return [];
+      const data = await res.json();
+      gcalCache[key] = (data.items || []).map(gcalNormalize);
+      return gcalCache[key];
+    } catch (e) { return []; }
+  }
+  function addHourStr(hm) { let p = (hm || "09:00").split(":").map(Number); let h = (p[0] + 1) % 24; return String(h).padStart(2, "0") + ":" + String(p[1]).padStart(2, "0"); }
+  async function gcalCreate(ev) {
+    if (!gcalConnected()) return null;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const body = { summary: ev.name, description: ev.notes || "", location: ev.location || "" };
+    if (ev.allDay) {
+      body.start = { date: ev.date };
+      const nd = new Date((ev.endDate || ev.date) + "T00:00:00"); nd.setDate(nd.getDate() + 1);
+      body.end = { date: nd.toISOString().slice(0, 10) };
+    } else {
+      const endT = ev.endTime && ev.endTime > (ev.time || "") ? ev.endTime : addHourStr(ev.time);
+      body.start = { dateTime: ev.date + "T" + (ev.time || "09:00") + ":00", timeZone: tz };
+      body.end = { dateTime: (ev.endDate || ev.date) + "T" + endT + ":00", timeZone: tz };
+    }
+    try {
+      const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+        method: "POST", headers: { Authorization: "Bearer " + gcalToken, "Content-Type": "application/json" }, body: JSON.stringify(body)
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) { return null; }
+  }
+  function renderGcalCard() {
+    const el = document.getElementById("gcal-card");
+    if (!el) return;
+    if (!gcalCid()) {
+      el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--muted);font-size:13px;line-height:1.6">Para conectar, adicione seu <b>Client ID</b> do Google em <a href="#" onclick="openSettings();return false" style="color:var(--primary-l)">⚙️ Config</a>.</p>`;
+      return;
+    }
+    if (gcalConnected()) {
+      el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--green);font-size:13px;margin-bottom:10px">✅ Conectado — seus eventos do Google aparecem no calend\xE1rio, e novos eventos v\xE3o pra l\xE1.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="window._gcalRefresh()">\u{1F504} Atualizar</button><button class="btn btn-sm" onclick="window._gcalDisconnect()">Desconectar</button></div>`;
+    } else {
+      el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--muted);font-size:13px;margin-bottom:10px">Conecte para ver e criar eventos direto na sua agenda do Google.</p><button class="btn btn-primary btn-sm" onclick="window._gcalConnect()">\u{1F517} Conectar Google Calendar</button>`;
+    }
+  }
   function openAddEventModal() {
     const date = calState.selected || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const connected = gcalConnected();
     window._modalContent(`
     <div class="modal-title">\u{1F4C5} Novo Evento</div>
     <div class="form-group">
-      <label>Nome do Evento</label>
-      <input id="ev-name" placeholder="Ex: Reuni\xE3o com cliente">
+      <input id="ev-name" class="ev-title-input" placeholder="Adicionar t\xEDtulo">
+    </div>
+    <label class="ev-check"><input type="checkbox" id="ev-allday" onchange="window._evToggleAllDay()"> Dia inteiro</label>
+    <div class="form-row">
+      <div class="form-group"><label>In\xEDcio</label><input type="date" id="ev-date" value="${date}"></div>
+      <div class="form-group ev-time-field"><label>Hora in\xEDcio</label><input type="time" id="ev-time" value="09:00"></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Data</label>
-        <input type="date" id="ev-date" value="${date}">
-      </div>
-      <div class="form-group">
-        <label>Hor\xE1rio</label>
-        <input type="time" id="ev-time" value="09:00">
-      </div>
+      <div class="form-group"><label>Fim</label><input type="date" id="ev-enddate" value="${date}"></div>
+      <div class="form-group ev-time-field"><label>Hora fim</label><input type="time" id="ev-endtime" value="10:00"></div>
     </div>
-    <div class="form-group">
-      <label>Notas</label>
-      <textarea id="ev-notes" placeholder="Detalhes opcionais..."></textarea>
-    </div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="window._saveEvent()">Salvar Evento</button>
+    <div class="form-group"><label>\u{1F4CD} Local</label><input id="ev-loc" placeholder="Adicionar local"></div>
+    <div class="form-group"><label>\u{1F4DD} Descri\xE7\xE3o</label><textarea id="ev-notes" placeholder="Detalhes opcionais..."></textarea></div>
+    ${connected ? `<label class="ev-check"><input type="checkbox" id="ev-gcal" checked> ➕ Adicionar tamb\xE9m ao Google Calendar</label>` : `<p style="color:var(--muted);font-size:12px;line-height:1.5">\u{1F4A1} Conecte o Google Calendar (card na Agenda) para enviar eventos direto pra sua conta.</p>`}
+    <button class="btn btn-primary" style="width:100%;margin-top:12px" id="ev-save-btn" onclick="window._saveEvent()">Salvar Evento</button>
   `);
-    window._saveEvent = () => {
+    window._evToggleAllDay = () => {
+      const on = document.getElementById("ev-allday").checked;
+      document.querySelectorAll(".ev-time-field").forEach((f) => f.style.display = on ? "none" : "");
+    };
+    window._saveEvent = async () => {
       const name = document.getElementById("ev-name").value.trim();
       if (!name) return;
+      const allDay = document.getElementById("ev-allday").checked;
       const ev = {
-        id: Date.now().toString(),
-        name,
+        id: Date.now().toString(), name,
         date: document.getElementById("ev-date").value,
-        time: document.getElementById("ev-time").value,
+        endDate: document.getElementById("ev-enddate").value,
+        time: allDay ? "" : document.getElementById("ev-time").value,
+        endTime: allDay ? "" : document.getElementById("ev-endtime").value,
+        allDay,
+        location: document.getElementById("ev-loc").value.trim(),
         notes: document.getElementById("ev-notes").value
       };
+      const toGoogle = document.getElementById("ev-gcal");
+      if (toGoogle && toGoogle.checked && gcalConnected()) {
+        const btn = document.getElementById("ev-save-btn");
+        if (btn) { btn.disabled = true; btn.textContent = "Enviando ao Google…"; }
+        const created = await gcalCreate(ev);
+        if (created) { ev.gid = created.id; gcalCache = {}; }
+        else alert("N\xE3o consegui criar no Google Calendar (confira a conex\xE3o). O evento foi salvo localmente.");
+      }
       storage_default.update("events", (evs) => [...evs, ev]);
       window._closeModal();
       calState.selected = ev.date;
-      drawCalendar();
+      if (gcalConnected()) gcalFetchMonth(calState.year, calState.month).then(() => drawCalendar());
+      else drawCalendar();
     };
   }
 
