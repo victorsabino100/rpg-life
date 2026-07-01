@@ -1319,11 +1319,22 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     <div class="event-item">
       <span class="event-time">${e.allDay ? "Dia todo" : e.time || "--:--"}</span>
       <span class="event-name">${e.name}${e.google ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle">Google</span>` : ""}</span>
-      ${e.google ? "" : `<button class="event-delete" onclick="window._deleteEvent('${e.id}')">\u2715</button>`}
+      <button class="event-delete" onclick="window._deleteEvent('${e.id}')">\u2715</button>
     </div>
   `).join("");
   }
-  function deleteEvent(id) {
+  async function deleteEvent(id) {
+    const local = (storage_default.get("events") || []).find((e) => e.id === id);
+    const gid = id.indexOf("g_") === 0 ? id.slice(2) : local && local.gid;
+    if (gid) {
+      if (!confirm("Excluir este evento tamb\xE9m da sua agenda do Google?")) return;
+      if (!gcalConnected()) { gcalKick(); alert("Reconectando ao Google… tente excluir de novo em instantes."); return; }
+      if (!await gcalDelete(gid)) { alert("N\xE3o consegui excluir no Google. Tente novamente."); return; }
+      storage_default.update("events", (evs) => evs.filter((e) => e.id !== id && e.gid !== gid));
+      gcalCache = {};
+      gcalFetchMonth(calState.year, calState.month).then(() => drawCalendar());
+      return;
+    }
     storage_default.update("events", (evs) => evs.filter((e) => e.id !== id));
     if (calState.selected) renderEvents(calState.selected);
     drawCalendar();
@@ -1441,6 +1452,15 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       if (!res.ok) return null;
       return await res.json();
     } catch (e) { return null; }
+  }
+  async function gcalDelete(gid) {
+    if (!gcalConnected()) return false;
+    try {
+      const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events/" + encodeURIComponent(gid), {
+        method: "DELETE", headers: { Authorization: "Bearer " + gcalToken }
+      });
+      return res.ok || res.status === 204 || res.status === 410;
+    } catch (e) { return false; }
   }
   function renderGcalCard() {
     const el = document.getElementById("gcal-card");
