@@ -453,9 +453,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 .event-delete { background:none; border:none; color:var(--muted); cursor:pointer; margin-left:auto; }
 
 /* ========== NOTES DUAL PANEL ========== */
-.notes-layout { display:grid; grid-template-columns:200px 1fr; gap:16px; height:calc(100vh-140px); }
-.notes-left { overflow-y:auto; }
-.notes-right { display:grid; grid-template-rows:auto 1fr; gap:16px; }
+.notes-topbar { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.notes-topbar-label { color:var(--muted); font-size:13px; font-weight:600; flex-shrink:0; }
+.notes-date-select {
+  flex:1; max-width:360px; padding:12px 14px;
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  color:var(--text); font-size:15px; font-weight:600; cursor:pointer;
+}
+.notes-date-select:focus { outline:none; border-color:var(--primary); }
+.notes-date-del-btn {
+  flex-shrink:0; width:44px; height:44px; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; color:var(--muted); cursor:pointer; font-size:16px;
+}
+.notes-date-del-btn:hover { color:var(--red); border-color:var(--red); }
+.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .notes-panel { display:flex; flex-direction:column; overflow:hidden; }
 #notes-checklist-panel { max-height:260px; overflow-y:auto; }
 .note-date-item { padding:8px 12px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--muted); transition:all .2s; margin-bottom:4px; border-left:3px solid transparent; }
@@ -768,7 +779,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   /* grids empilham no celular pra não vazar da tela */
   .grid-3, .grid-2, .attrs-grid { grid-template-columns: 1fr; }
   .fin-summary-grid { grid-template-columns: 1fr 1fr; }
-  .notes-layout, .knowledge-layout { grid-template-columns: 1fr; height: auto; }
+  .notes-layout, .knowledge-layout, .notes-right { grid-template-columns: 1fr; height: auto; }
   .cards-grid, .rewards-grid, .books-grid { grid-template-columns: 1fr; }
 }
   </style>
@@ -1546,15 +1557,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       <h1><span>\u{1F4DD}</span> Notas Di\xE1rias</h1>
       <button class="btn btn-primary btn-sm" onclick="window._noteToday()">\u{1F4C5} Hoje</button>
     </div>
-    <div class="notes-layout">
-      <div class="notes-left card">
-        <div class="card-title">Dias</div>
-        <div id="notes-date-list"></div>
-      </div>
-      <div class="notes-right">
-        <div class="notes-panel card" id="notes-checklist-panel"></div>
-        <div class="notes-panel card" id="notes-text-panel"></div>
-      </div>
+    <div class="notes-topbar">
+      <span class="notes-topbar-label">\u{1F4C6} Dia</span>
+      <select id="notes-date-select" class="notes-date-select" onchange="window._selectNoteDate(this.value)"></select>
+      <button id="notes-date-del-btn" class="notes-date-del-btn" title="Excluir notas deste dia" onclick="window._deleteActiveNoteDate()">\u{1F5D1}</button>
+    </div>
+    <div class="notes-right">
+      <div class="notes-panel card" id="notes-checklist-panel"></div>
+      <div class="notes-panel card" id="notes-text-panel"></div>
     </div>
   `;
     window._noteToday = () => {
@@ -1583,24 +1593,23 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     Object.keys(notes).forEach((d) => {
       if (!dates.includes(d) && hasContent(notes[d])) dates.push(d);
     });
-    const el = document.getElementById("notes-date-list");
+    const el = document.getElementById("notes-date-select");
     if (!el) return;
     el.innerHTML = dates.map((d) => {
       const n = notes[d] || {};
       const done = (n.checklist || []).filter((i) => i.done).length;
       const total = (n.checklist || []).length;
       const filled = hasContent(n);
-      return `<div class="note-date-item ${d === activeDate ? "active" : ""} ${filled ? "has-content" : ""}" onclick="window._selectNoteDate('${d}')">
-      <b>${fmtDate(d)}</b>
-      ${total ? `<span class="badge badge-${done === total ? "green" : "gold"}" style="float:right">${done}/${total}</span>` : ""}
-      ${filled ? `<button class="note-date-del" onclick="event.stopPropagation();window._deleteNoteDate('${d}')">\u2715</button>` : ""}
-      <div class="note-preview">${(n.text || "").slice(0, 40) || (filled ? "" : "\u2014")}</div>
-    </div>`;
+      const mark = total ? ` \u2014 ${done}/${total}${done === total ? " \u2705" : ""}` : filled ? " \u2022" : "";
+      return `<option value="${d}" ${d === activeDate ? "selected" : ""}>${fmtDate(d)}${mark}</option>`;
     }).join("");
+    const delBtn = document.getElementById("notes-date-del-btn");
+    if (delBtn) delBtn.style.display = hasContent(notes[activeDate]) ? "" : "none";
     window._selectNoteDate = (d) => {
       activeDate = d;
       render();
     };
+    window._deleteActiveNoteDate = () => window._deleteNoteDate(activeDate);
     window._deleteNoteDate = (d) => {
       const backup = storage_default.get("notes")[d];
       storage_default.update("notes", (ns) => {
