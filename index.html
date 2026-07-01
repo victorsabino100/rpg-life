@@ -1231,6 +1231,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     <div class="card" style="margin-top:0" id="gcal-card"></div>
   `;
     window._calNav = (dir) => {
+      gcalKick();
       calState.month += dir;
       if (calState.month > 11) {
         calState.month = 0;
@@ -1247,12 +1248,12 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     window._deleteEvent = deleteEvent;
     window._gcalConnect = () => gcalConnect();
     window._gcalDisconnect = () => { gcalDisconnect(); renderGcalCard(); drawCalendar(); };
-    window._gcalRefresh = () => { gcalCache = {}; gcalFetchMonth(calState.year, calState.month).then(() => { drawCalendar(); renderGcalCard(); }); };
+    window._gcalRefresh = () => { gcalKick(); gcalCache = {}; gcalFetchMonth(calState.year, calState.month).then(() => { drawCalendar(); renderGcalCard(); }); };
     window._afterGcalConnect = () => { gcalFetchMonth(calState.year, calState.month).then(() => { drawCalendar(); renderGcalCard(); }); };
     gcalRestoreToken();
     renderGcalCard();
     drawCalendar();
-    if (!gcalConnected() && gcalGranted) gcalEnsureToken().then((ok) => { if (ok) { renderGcalCard(); gcalFetchMonth(calState.year, calState.month).then(() => drawCalendar()); } });
+    gcalKick();
   }
   function drawCalendar() {
     const { year, month } = calState;
@@ -1296,6 +1297,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     if (gcalConnected() && !gcalCache[gcalMonthKey(year, month)]) gcalFetchMonth(year, month).then(() => drawCalendar());
   }
   function selectDay(dateStr) {
+    gcalKick();
     calState.selected = dateStr;
     drawCalendar();
     renderEvents(dateStr);
@@ -1370,10 +1372,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     });
   }
   function gcalConnect() { gcalRequest(!gcalGranted); }
-  async function gcalEnsureToken() {
-    if (gcalConnected()) return true;
-    if (!gcalGranted || !gcalCid()) return false;
-    return await gcalRequest(false);
+  async function gcalEnsureToken() { return gcalConnected(); }
+  // Renovação "de carona" num gesto do usuário: o Google não permite renovar
+  // token 100% em background (popup_failed_to_open), mas dentro de um clique
+  // já autorizado a renovação é instantânea e sem tela de login.
+  function gcalKick() {
+    if (gcalConnected() || !gcalGranted) return;
+    if (!gcalEnsureClient()) return;
+    try { gcalTokenClient.requestAccessToken({ prompt: "" }); } catch (e) {}
   }
   function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalGranted = false; gcalCache = {}; try { localStorage.removeItem("rpg_gcal_tok"); localStorage.removeItem("rpg_gcal_granted"); } catch (e) {} }
   function gcalNormalize(it) {
@@ -1434,11 +1440,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     }
     if (gcalConnected()) {
       el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--green);font-size:13px;margin-bottom:10px">✅ Conectado — seus eventos do Google aparecem no calend\xE1rio, e novos eventos v\xE3o pra l\xE1.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-sm" onclick="window._gcalRefresh()">\u{1F504} Atualizar</button><button class="btn btn-sm" onclick="window._gcalDisconnect()">Desconectar</button></div>`;
+    } else if (gcalGranted) {
+      el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--muted);font-size:13px;margin-bottom:10px">A conex\xE3o renova sozinha quando voc\xEA usa a agenda. Se n\xE3o carregar, toque abaixo:</p><button class="btn btn-primary btn-sm" onclick="window._gcalConnect()">\u{1F504} Reconectar</button>`;
     } else {
       el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--muted);font-size:13px;margin-bottom:10px">Conecte para ver e criar eventos direto na sua agenda do Google.</p><button class="btn btn-primary btn-sm" onclick="window._gcalConnect()">\u{1F517} Conectar Google Calendar</button>`;
     }
   }
   function openAddEventModal() {
+    gcalKick();
     const date = calState.selected || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     const connected = gcalConnected();
     window._modalContent(`
