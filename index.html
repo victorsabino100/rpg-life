@@ -506,11 +506,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 .checklist-del { background:none; border:none; color:var(--muted); cursor:pointer; opacity:.5; transition:opacity .2s; }
 .checklist-item:hover .checklist-del { opacity:1; }
 .checklist-del:hover { color:var(--red); opacity:1; }
+.checklist-due-btn { background:none; border:none; color:var(--muted); cursor:pointer; opacity:.4; transition:opacity .2s; font-size:13px; flex-shrink:0; }
+.checklist-item:hover .checklist-due-btn { opacity:1; }
+.checklist-due-btn:hover { color:var(--gold); opacity:1; }
 .note-date-del { position:absolute; top:6px; right:6px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; opacity:.5; }
 .note-date-del:hover { color:var(--red); opacity:1; }
 .note-date-item { position:relative; }
 .note-date-item.has-content { border-left-color:var(--gold); }
-.checklist-add { display:flex; gap:6px; margin-top:8px; }
+.checklist-add { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.checklist-add #check-input { flex:1; min-width:140px; }
+.checklist-add #check-due { width:180px; flex-shrink:0; }
 
 /* ========== OBJETIVOS ========== */
 .journey-board { display:flex; gap:16px; overflow-x:auto; padding-bottom:12px; }
@@ -789,6 +794,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 
   /* modal cabe na tela do celular */
   #modal-box { min-width: 0; width: 92%; padding: 20px; max-height: 88vh; }
+  .checklist-add #check-due { width: 100%; }
 
   /* grids empilham no celular pra não vazar da tela */
   .grid-3, .grid-2, .attrs-grid { grid-template-columns: 1fr; }
@@ -1823,7 +1829,33 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       activeDate = todayStr();
       render();
     };
+    const rolled = rolloverUnfinishedChecklist();
     render();
+    if (rolled > 0) celebrate(`\u{1F504} ${rolled} item${rolled > 1 ? "s" : ""} n\xE3o conclu\xEDdo${rolled > 1 ? "s" : ""} movido${rolled > 1 ? "s" : ""} pra hoje`);
+  }
+  function rolloverUnfinishedChecklist() {
+    const notes = storage_default.get("notes") || {};
+    const today = todayStr();
+    const moved = [];
+    let changed = false;
+    Object.keys(notes).forEach((date) => {
+      if (date >= today) return;
+      const day = notes[date];
+      if (!day || !Array.isArray(day.checklist)) return;
+      const pending = day.checklist.filter((it) => !it.done);
+      if (pending.length) {
+        moved.push(...pending.map((it) => ({ ...it, movedFrom: date })));
+        day.checklist = day.checklist.filter((it) => it.done);
+        changed = true;
+      }
+    });
+    if (moved.length) {
+      notes[today] = notes[today] || { checklist: [], text: "", mood: "" };
+      notes[today].checklist = notes[today].checklist || [];
+      notes[today].checklist.push(...moved);
+    }
+    if (changed) storage_default.set("notes", notes);
+    return moved.length;
   }
   function render() {
     renderDateList();
@@ -1900,29 +1932,38 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         </div>
       </div>
       <div id="checklist-items">
-        ${(note.checklist || []).map((item, i) => `
+        ${(note.checklist || []).map((item, i) => {
+        const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
+        return `
           <div class="checklist-item ${item.done ? "done" : ""}" id="cli-${i}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
-            <span class="checklist-text">${esc2(item.text)}</span>
+            <span class="checklist-text">${esc2(item.text)}${item.movedFrom ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504} ${fmtDateBR(item.movedFrom)}</span>` : ""}</span>
+            ${item.due ? `<span class="badge badge-${overdue ? "red" : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
+            <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
             <button class="checklist-del" onclick="window._delCheck(${i})">\u2715</button>
           </div>
-        `).join("")}
+        `;
+      }).join("")}
       </div>
       <div class="checklist-add">
         <input id="check-input" placeholder="Adicionar item..." onkeydown="if(event.key==='Enter')window._addCheck()">
+        <input id="check-due" type="datetime-local" title="Prazo de entrega (opcional)">
         <button class="btn btn-primary btn-sm" onclick="window._addCheck()">+</button>
       </div>
     `;
       window._addCheck = () => {
         const inp = document.getElementById("check-input");
+        const dueInp = document.getElementById("check-due");
         const text = inp.value.trim();
         if (!text) return;
+        const due = dueInp && dueInp.value ? dueInp.value : null;
         storage_default.update("notes", (ns) => {
           if (!ns[activeDate]) ns[activeDate] = { checklist: [], text: "", mood: "" };
-          ns[activeDate].checklist.push({ text, done: false });
+          ns[activeDate].checklist.push({ text, done: false, due });
           return ns;
         });
         inp.value = "";
+        if (dueInp) dueInp.value = "";
         renderPanels();
       };
       window._toggleCheck = (i) => {
@@ -1959,6 +2000,37 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
           return ns;
         });
         renderPanels();
+      };
+      window._editDue = (i) => {
+        const item = (storage_default.get("notes")[activeDate]?.checklist || [])[i];
+        if (!item) return;
+        window._modalContent(`
+        <div class="modal-title">\u{1F4C5} Prazo de entrega</div>
+        <div class="form-group"><label>${esc2(item.text)}</label>
+          <input type="datetime-local" id="edit-due-input" value="${item.due || ""}">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          ${item.due ? `<button class="btn btn-ghost" style="flex:1" onclick="window._clearDue(${i})">Remover prazo</button>` : ""}
+          <button class="btn btn-primary" style="flex:1" onclick="window._saveDue(${i})">Salvar</button>
+        </div>
+      `);
+        window._saveDue = (idx) => {
+          const val = document.getElementById("edit-due-input").value || null;
+          storage_default.update("notes", (ns) => {
+            ns[activeDate].checklist[idx].due = val;
+            return ns;
+          });
+          window._closeModal();
+          renderPanels();
+        };
+        window._clearDue = (idx) => {
+          storage_default.update("notes", (ns) => {
+            ns[activeDate].checklist[idx].due = null;
+            return ns;
+          });
+          window._closeModal();
+          renderPanels();
+        };
       };
     }
     const txEl = document.getElementById("notes-text-panel");
@@ -3387,6 +3459,12 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     if (!d) return "";
     const [y, m, dd] = d.split("-");
     return `${dd}/${m}/${y}`;
+  }
+  function fmtDueBR(d) {
+    if (!d) return "";
+    const [datePart, timePart] = d.split("T");
+    const [y, m, dd] = datePart.split("-");
+    return `${dd}/${m}` + (timePart ? ` \xE0s ${timePart}` : "");
   }
   function itemDate(x) {
     return x.date || (x.dueDay ? `${activeMonth}-${pad(x.dueDay)}` : `${activeMonth}-01`);
