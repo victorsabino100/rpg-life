@@ -2604,6 +2604,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     };
     window._deleteFinItem = deleteItem;
     window._toggleFixedStatus = toggleFixedStatus;
+    window._toggleIncomeStatus = toggleIncomeStatus;
     window._manageCats = manageCategoriesModal;
     window._expenseFilter = (f) => {
       expenseFilter = f;
@@ -2753,6 +2754,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       </div>
       ${items.length ? items.sort((a, b) => b.date.localeCompare(a.date)).map((x) => {
       const cardName = !isIncome && x.cardId ? (fin.creditCards || []).find((c) => c.id === x.cardId)?.name || "" : "";
+      const st = isIncome ? x.status || "pending" : null;
       return `
         <div class="tx-row">
           <div class="tx-icon-box" style="background:${isIncome ? "rgba(16,185,129,.15)" : "rgba(239,68,68,.15)"}">${isIncome ? "\u{1F49A}" : "\u{1F4B8}"}</div>
@@ -2760,13 +2762,38 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
             <div class="tx-name">${x.name}</div>
             <div class="tx-cat">${x.category || ""} \xB7 ${fmtDateBR(x.date)}${cardName ? " \xB7 \u{1F4B3} " + cardName : ""}</div>
           </div>
+          ${isIncome ? `<select class="status-sel" onchange="window._toggleIncomeStatus('${x.id}',this.value)" style="background:transparent;border:none;color:${st === "received" ? "var(--green)" : "var(--gold)"};font-weight:600;cursor:pointer;font-size:12px">
+            <option value="pending" ${st === "pending" ? "selected" : ""}>\u{1F7E1} A receber</option>
+            <option value="received" ${st === "received" ? "selected" : ""}>\u2705 Recebido</option>
+          </select>` : ""}
           <div class="tx-amount ${isIncome ? "income" : "expense"}">${isIncome ? "+" : "-"}${fmt(x.amount)}</div>
           <button class="tx-edit" onclick="window._editFinItem('${type}','${x.id}')" title="Editar">\u270F\uFE0F</button>
           <button class="tx-del" onclick="window._deleteFinItem('${type}','${x.id}')" title="Excluir">\u2715</button>
         </div>`;
     }).join("") : '<div class="empty-state" style="padding:24px">Nenhum lan\xE7amento neste m\xEAs.</div>'}
     </div>
+    ${isIncome ? renderIncomeTotals(items) : ""}
   `;
+  }
+  function renderIncomeTotals(items) {
+    const total = items.reduce((s, x) => s + x.amount, 0);
+    const received = items.filter((x) => x.status === "received").reduce((s, x) => s + x.amount, 0);
+    const pending = total - received;
+    return `
+    <div class="fin-totals-bar">
+      <div class="fin-total-item"><span class="fin-total-label">Total em Ganhos</span><b>${fmt(total)}</b></div>
+      <div class="fin-total-item"><span class="fin-total-dot" style="background:var(--green)"></span><span class="fin-total-label">Recebido</span><b>${fmt(received)}</b></div>
+      <div class="fin-total-item"><span class="fin-total-dot" style="background:var(--gold)"></span><span class="fin-total-label">A receber</span><b>${fmt(pending)}</b></div>
+    </div>
+  `;
+  }
+  function toggleIncomeStatus(id, status) {
+    storage_default.update("finance", (f) => {
+      const it = (f.incomes || []).find((x) => x.id === id);
+      if (it) it.status = status;
+      return f;
+    });
+    renderFinContent();
   }
   function renderFixedBlock() {
     const fin = storage_default.get("finance") || {};
