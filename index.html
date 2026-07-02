@@ -821,7 +821,6 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       <div class="sidebar-footer">
         <button id="btn-sync" onclick="window._sidebarSync()">🔄 Atualizar</button>
         <button id="btn-settings" onclick="openSettings()">⚙️ Config</button>
-        <button id="btn-reset" onclick="window._resetAll()">🗑️ Resetar Tudo</button>
       </div>
     </nav>
 
@@ -1144,18 +1143,24 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     let prevLevel = 0;
     const char = storage_default.update("character", (c) => {
       prevLevel = c.level;
-      c.totalXP += amount;
-      c.coins = (c.coins || 0) + coinsEarned;
-      c.attrs[attrKey].xp += amount;
+      c.totalXP = Math.max(0, c.totalXP + amount);
+      c.coins = Math.max(0, (c.coins || 0) + coinsEarned);
+      c.attrs[attrKey].xp = Math.max(0, c.attrs[attrKey].xp + amount);
       c.level = levelFromXP(c.totalXP);
       c.attrs[attrKey].level = levelFromXP(c.attrs[attrKey].xp);
-      ACHIEVEMENTS.forEach((a) => {
-        if (!c.achievements.includes(a.id) && a.cond(c)) c.achievements.push(a.id);
-      });
+      if (amount > 0) {
+        ACHIEVEMENTS.forEach((a) => {
+          if (!c.achievements.includes(a.id) && a.cond(c)) c.achievements.push(a.id);
+        });
+      }
       return c;
     });
-    showXPToast(amount, coinsEarned, attrKey);
-    if (char.level > prevLevel) showLevelUp(char);
+    if (amount > 0) {
+      showXPToast(amount, coinsEarned, attrKey);
+      if (char.level > prevLevel) showLevelUp(char);
+    } else if (amount < 0) {
+      showXPToast(amount, coinsEarned, attrKey);
+    }
     renderCharMini(char);
     return char;
   }
@@ -1183,7 +1188,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     const attr = ATTRS[attrKey];
     const t = document.getElementById("xp-toast");
     if (!t) return;
-    t.textContent = `+${amount} XP \u{1FA99}+${coins} ${attr.emoji} ${attr.name}`;
+    const sign = amount >= 0 ? "+" : "";
+    t.textContent = `${sign}${amount} XP \u{1FA99}${sign}${coins} ${attr.emoji} ${attr.name}`;
     t.classList.remove("hidden");
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.add("hidden"), 2500);
@@ -1669,8 +1675,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
           ${habits.map((h) => {
       const hlog = log[h.id] || {};
       const done = Object.values(hlog).filter(Boolean).length;
+      const hAttr = ATTRS[h.attr] || ATTRS.missao;
       return `<tr>
-              <td class="habit-name-col"><input class="habit-name" value="${esc(h.name)}" onchange="window._habitRename('${h.id}',this.value)"></td>
+              <td class="habit-name-col">
+                <div style="display:flex;align-items:center;gap:4px">
+                  <select class="habit-attr-sel" title="\xC1rea da vida" onchange="window._habitAttrChange('${h.id}',this.value)" style="background:transparent;border:none;color:${hAttr.color};font-size:15px;cursor:pointer;width:auto;padding:0">
+                    ${Object.entries(ATTRS).map(([k, a]) => `<option value="${k}" ${k === (h.attr || "missao") ? "selected" : ""}>${a.emoji} ${a.name}</option>`).join("")}
+                  </select>
+                  <input class="habit-name" value="${esc(h.name)}" onchange="window._habitRename('${h.id}',this.value)">
+                </div>
+              </td>
               ${Array.from({ length: nDays }, (_, i) => {
         const d = i + 1;
         const on = !!hlog[d];
@@ -1692,12 +1706,26 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       renderContent(container);
     };
     window._habitAdd = () => {
-      storage_default.update("agenda", (a) => {
-        a.habits = a.habits || [];
-        a.habits.push({ id: "h" + Date.now(), name: "Novo h\xE1bito" });
-        return a;
-      });
-      renderContent(container);
+      const attrOpts = Object.entries(ATTRS).map(([k, v]) => `<option value="${k}">${v.emoji} ${v.name}</option>`).join("");
+      window._modalContent(`
+      <div class="modal-title">✅ Novo H\xE1bito</div>
+      <div class="form-group"><label>Nome do H\xE1bito</label><input id="hb-name" placeholder="Ex: Beber 2L de \xE1gua"></div>
+      <div class="form-group"><label>\xC1rea da Vida</label><select id="hb-attr">${attrOpts}</select>
+        <small style="color:var(--muted);font-size:11px">Cada dia marcado d\xE1 +${HABIT_XP} XP nessa \xE1rea.</small>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="window._saveNewHabit()">Salvar H\xE1bito ✅</button>
+    `);
+      window._saveNewHabit = () => {
+        const name = document.getElementById("hb-name").value.trim() || "Novo h\xE1bito";
+        const attr = document.getElementById("hb-attr").value;
+        storage_default.update("agenda", (a) => {
+          a.habits = a.habits || [];
+          a.habits.push({ id: "h" + Date.now(), name, attr });
+          return a;
+        });
+        window._closeModal();
+        renderContent(container);
+      };
     };
     window._habitRename = (id, val) => {
       storage_default.update("agenda", (a) => {
@@ -1706,13 +1734,28 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         return a;
       });
     };
+    window._habitAttrChange = (id, attr) => {
+      storage_default.update("agenda", (a) => {
+        const h = a.habits.find((x) => x.id === id);
+        if (h) h.attr = attr;
+        return a;
+      });
+    };
     window._habitDel = (id) => {
-      const habit = (storage_default.get("agenda")?.habits || []).find((h) => h.id === id);
+      const ag = storage_default.get("agenda") || {};
+      const habit = (ag.habits || []).find((h) => h.id === id);
+      const totalXP = habitTotalChecks(ag, id) * HABIT_XP;
       storage_default.update("agenda", (a) => {
         a.habits = a.habits.filter((h) => h.id !== id);
         return a;
       });
       renderContent(container);
+      if (habit && totalXP > 0) {
+        const coins = Math.ceil(totalXP / 2);
+        if (confirm(`"${habit.name}" j\xE1 gerou ${totalXP} XP e \u{1FA99}${coins}. Deseja remover esses pontos e moedas tamb\xE9m?`)) {
+          addXP(-totalXP, habit.attr || "missao");
+        }
+      }
       if (habit && window._showUndo) window._showUndo(`H\xE1bito "${habit.name}" exclu\xEDdo`, () => {
         storage_default.update("agenda", (a) => {
           a.habits.push(habit);
@@ -1722,15 +1765,34 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       });
     };
     window._habitToggle = (id, day) => {
+      const habit = (storage_default.get("agenda")?.habits || []).find((h) => h.id === id);
+      let turnedOn = false;
       storage_default.update("agenda", (a) => {
         a.habitLog = a.habitLog || {};
         a.habitLog[habitMonth] = a.habitLog[habitMonth] || {};
         a.habitLog[habitMonth][id] = a.habitLog[habitMonth][id] || {};
-        a.habitLog[habitMonth][id][day] = !a.habitLog[habitMonth][id][day];
+        turnedOn = !a.habitLog[habitMonth][id][day];
+        a.habitLog[habitMonth][id][day] = turnedOn;
         return a;
       });
+      if (habit) {
+        if (turnedOn) checkStreak();
+        addXP(turnedOn ? HABIT_XP : -HABIT_XP, habit.attr || "missao");
+      }
       renderContent(container);
     };
+  }
+  var HABIT_XP = 10;
+  function habitTotalChecks(agenda, habitId) {
+    let n = 0;
+    const log = agenda.habitLog || {};
+    Object.values(log).forEach((monthObj) => {
+      const days = (monthObj || {})[habitId] || {};
+      Object.values(days).forEach((v) => {
+        if (v) n++;
+      });
+    });
+    return n;
   }
   function esc(s) {
     return (s == null ? "" : String(s)).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -1878,10 +1940,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         renderDateList();
       };
       window._delCheck = (i) => {
+        const item = (storage_default.get("notes")[activeDate]?.checklist || [])[i];
         storage_default.update("notes", (ns) => {
           ns[activeDate].checklist.splice(i, 1);
           return ns;
         });
+        if (item && item.done) {
+          if (confirm(`Este item j\xE1 tinha gerado 10 XP e \u{1FA99}5. Deseja remover esses pontos tamb\xE9m?`)) {
+            addXP(-10, "missao");
+          }
+        }
         renderPanels();
       };
       window._setMood = (m) => {
@@ -2210,8 +2278,19 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     };
     window._deleteObj = (oid) => {
       if (!confirm("Excluir este objetivo?")) return;
+      const obj = (storage_default.get("objectives") || []).find((o) => o.id === oid);
       storage_default.update("objectives", (os) => os.filter((o) => o.id !== oid));
       window._closeModal();
+      if (obj) {
+        const doneMilestones = (obj.milestones || []).filter((m) => m.done).length;
+        let totalXP = doneMilestones * 15 + (obj.rewarded ? 150 : 0);
+        if (totalXP > 0) {
+          const coins = Math.ceil(totalXP / 2);
+          if (confirm(`Este objetivo gerou ${totalXP} XP e \u{1FA99}${coins} ao longo do tempo. Deseja remover esses pontos tamb\xE9m?`)) {
+            addXP(-totalXP, obj.attr || "missao");
+          }
+        }
+      }
       renderBoard();
     };
   }
@@ -4383,7 +4462,32 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     </div>
   `);
   };
-  var SECTIONS = ["dashboard", "personagem", "agenda", "notas", "objetivos", "insights", "financas", "comercial", "treinos", "biblioteca", "compras", "recompensas"];
+  window._resetAvatar = () => {
+    window._modalContent(`
+    <div class="modal-title">\u{1F504} Resetar Avatar</div>
+    <p style="color:var(--muted);line-height:1.6;margin-bottom:8px">
+      Isso vai zerar seu <b>n\xEDvel, XP, moedas e conquistas</b> — voltando pro N\xEDvel 1, Peasant.
+    </p>
+    <p style="color:var(--green);font-size:13px;margin-bottom:8px">✅ Suas miss\xF5es, h\xE1bitos, notas, finan\xE7as, objetivos e todo o resto continuam intactos.</p>
+    <p style="color:var(--red);font-size:13px;margin-bottom:16px">⚠️ Esta a\xE7\xE3o n\xE3o pode ser desfeita.</p>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="window._closeModal()">Cancelar</button>
+      <button class="btn" style="flex:1;background:var(--gold);color:#000;border:none" onclick="window._doResetAvatar()">Sim, resetar avatar</button>
+    </div>
+  `);
+  };
+  window._doResetAvatar = () => {
+    storage_default.update("character", (c) => ({
+      ...JSON.parse(JSON.stringify(DEFAULTS.character)),
+      name: c.name,
+      emoji: c.emoji
+    }));
+    window._closeModal();
+    renderCharMini();
+    if (currentSection === "dashboard") renderDashboard2();
+    else if (currentSection === "personagem") renderPersonagem(document.getElementById("personagem"));
+  };
+  var SECTIONS =["dashboard", "personagem", "agenda", "notas", "objetivos", "insights", "financas", "comercial", "treinos", "biblioteca", "compras", "recompensas"];
   var RENDERERS = {
     personagem: renderPersonagem,
     agenda: renderAgenda,
@@ -4466,7 +4570,11 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     </div>
     <div id="sync-status" style="font-size:12px;color:var(--muted);margin-top:8px">${sync.lastSync ? "\xDAltima sync: " + new Date(sync.lastSync).toLocaleString("pt-BR") : "Ainda n\xE3o sincronizado."}</div>
     <hr style="border-color:var(--border);margin:16px 0">
-    <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="if(confirm('Zerar TODOS os dados?')){localStorage.clear();location.reload()}">\u26A0\uFE0F Zerar todos os dados</button>
+    <div class="card-title" style="margin-bottom:8px;color:var(--red)">\u26A0\uFE0F Zona de Risco</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" style="color:var(--gold);border-color:var(--gold)" onclick="window._resetAvatar()">\u{1F504} Resetar Avatar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:var(--red)" onclick="window._resetAll()">\u{1F5D1}\uFE0F Resetar Tudo</button>
+    </div>
   `);
     window._setEmoji = (e) => {
       storage_default.update("character", (c) => {
@@ -4713,7 +4821,15 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       renderDashboard2();
     };
     window._deleteTask = (id) => {
-      storage_default.update("tasks", (ts) => ts.filter((t) => t.id !== id));
+      const tasks2 = storage_default.get("tasks") || [];
+      const t = tasks2.find((x) => x.id === id);
+      storage_default.update("tasks", (ts) => ts.filter((x) => x.id !== id));
+      if (t && t.done) {
+        const coins = Math.ceil(t.xp / 2);
+        if (confirm(`Esta miss\xE3o gerou +${t.xp} XP e \u{1FA99}${coins}. Deseja remover esses pontos tamb\xE9m?`)) {
+          addXP(-t.xp, t.attr);
+        }
+      }
       renderDashboard2();
     };
   }
