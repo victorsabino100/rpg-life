@@ -504,6 +504,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   border-radius:10px; color:var(--muted); cursor:pointer; font-size:16px;
 }
 .notes-date-del-btn:hover { color:var(--red); border-color:var(--red); }
+.notes-date-input { width:auto; min-width:150px; padding:9px 12px; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:14px; font-weight:600; cursor:pointer; }
+.notes-date-input:focus { outline:none; border-color:var(--primary); }
 .notes-cal { margin-bottom:16px; max-width:340px; padding:12px 14px; }
 .ncal-head { display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:14px; }
 .ncal-nav { background:var(--surface2); border:1px solid var(--border); border-radius:8px; width:28px; height:28px; color:var(--text); cursor:pointer; font-size:16px; line-height:1; }
@@ -518,7 +520,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 .ncal-dot { position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--primary); }
 .ncal-day.active .ncal-dot { background:#fff; }
 .ncal-day.alldone .ncal-dot { background:var(--green); }
-.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:calc(100vh - 320px); }
+.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:calc(100vh - 230px); }
 .notes-panel { display:flex; flex-direction:column; overflow:hidden; }
 #notes-checklist-panel { max-height:260px; overflow-y:auto; }
 .note-date-item { padding:8px 12px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--muted); transition:all .2s; margin-bottom:4px; border-left:3px solid transparent; }
@@ -1932,7 +1934,11 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       <h1><span>\u{1F4DD}</span> Notas Di\xE1rias</h1>
       <button class="btn btn-primary btn-sm" onclick="window._noteToday()">\u{1F4C5} Hoje</button>
     </div>
-    <div class="notes-cal card" id="notes-cal"></div>
+    <div class="notes-topbar">
+      <span class="notes-topbar-label">\u{1F4C6} Dia:</span>
+      <input type="date" id="notes-date-input" class="notes-date-input" onchange="window._selectNoteDate(this.value)">
+      <button id="notes-date-del-btn" class="notes-date-del-btn" title="Excluir notas deste dia" onclick="window._deleteActiveNoteDate()">\u{1F5D1}</button>
+    </div>
     <div class="notes-right">
       <div class="notes-panel card" id="notes-checklist-panel"></div>
       <div class="notes-panel card" id="notes-text-panel"></div>
@@ -1984,47 +1990,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     }
     return days;
   }
-  var noteCalMonth = todayStr().slice(0, 7);
   function renderDateList() {
-    const el = document.getElementById("notes-cal");
-    if (!el) return;
+    const inp = document.getElementById("notes-date-input");
+    if (!inp) return;
     const notes = storage_default.get("notes") || {};
-    const [y, m] = noteCalMonth.split("-").map(Number);
-    const monthName = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-    const first = new Date(y, m - 1, 1).getDay();
-    const days = new Date(y, m, 0).getDate();
-    let cells = "";
-    for (let i = 0; i < first; i++) cells += `<div class="ncal-day empty"></div>`;
-    for (let d = 1; d <= days; d++) {
-      const ds = `${y}-${pad(m)}-${pad(d)}`;
-      const n = notes[ds] || {};
-      const has = hasContent(n);
-      const total = (n.checklist || []).length;
-      const allDone = total && (n.checklist || []).every((i) => i.done);
-      cells += `<div class="ncal-day ${ds === activeDate ? "active" : ""} ${ds === todayStr() ? "today" : ""} ${has ? "has" : ""} ${allDone ? "alldone" : ""}" onclick="window._selectNoteDate('${ds}')">${d}${has ? '<span class="ncal-dot"></span>' : ""}</div>`;
-    }
-    el.innerHTML = `
-      <div class="ncal-head">
-        <button class="ncal-nav" onclick="window._noteCalNav(-1)">\u2039</button>
-        <b style="text-transform:capitalize">${monthName}</b>
-        <button class="ncal-nav" onclick="window._noteCalNav(1)">\u203a</button>
-        <button class="notes-date-del-btn" title="Excluir notas do dia selecionado" onclick="window._deleteActiveNoteDate()" style="margin-left:auto;${hasContent(notes[activeDate]) ? "" : "visibility:hidden"}">\u{1F5D1}</button>
-      </div>
-      <div class="ncal-grid">
-        ${["D", "S", "T", "Q", "Q", "S", "S"].map((w) => `<div class="ncal-w">${w}</div>`).join("")}
-        ${cells}
-      </div>`;
-    window._noteCalNav = (dir) => {
-      let [yy, mm] = noteCalMonth.split("-").map(Number);
-      mm += dir;
-      if (mm < 1) { mm = 12; yy--; }
-      if (mm > 12) { mm = 1; yy++; }
-      noteCalMonth = `${yy}-${pad(mm)}`;
-      renderDateList();
-    };
+    inp.value = activeDate;
+    const delBtn = document.getElementById("notes-date-del-btn");
+    if (delBtn) delBtn.style.display = hasContent(notes[activeDate]) ? "" : "none";
     window._selectNoteDate = (d) => {
+      if (!d) return;
       activeDate = d;
-      noteCalMonth = d.slice(0, 7);
       render();
     };
     window._deleteActiveNoteDate = () => window._deleteNoteDate(activeDate);
