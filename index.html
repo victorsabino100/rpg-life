@@ -6,7 +6,7 @@
   <title>⚔️ RPG Life</title>
   <!-- PWA / instalável como app -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#7c3aed">
+  <meta name="theme-color" content="#37A9DE">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -16,21 +16,22 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
 :root {
-  --bg: #0d0d14;
-  --surface: #161621;
-  --surface2: #1e1e2e;
-  --border: #2a2a3e;
-  --primary: #7c3aed;
-  --primary-l: #a855f7;
-  --gold: #f59e0b;
-  --green: #10b981;
-  --red: #ef4444;
-  --blue: #3b82f6;
-  --pink: #ec4899;
-  --orange: #f97316;
-  --text: #e2e8f0;
-  --muted: #64748b;
+  --bg: #F4F1EA;
+  --surface: #FFFFFF;
+  --surface2: #F6F3EC;
+  --border: #E3DFD3;
+  --primary: #37A9DE;
+  --primary-l: #6FC5EC;
+  --gold: #EC6FA0;
+  --green: #12A97A;
+  --red: #E4574C;
+  --blue: #37A9DE;
+  --pink: #EC6FA0;
+  --orange: #F0913E;
+  --text: #1E2A4A;
+  --muted: #7A8398;
   --sidebar-w: 220px;
+  --navy: #1E2A4A;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -127,6 +128,29 @@ body {
 /* GRID */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.tier-road { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
+.tier-node { flex:1; min-width:96px; text-align:center; padding:12px 8px; border-radius:14px; border:1.5px solid var(--border); background:var(--surface2); transition:all .2s; }
+.tier-node.current { border-color:var(--gold); background:linear-gradient(180deg,#fff,#fdeef4); box-shadow:0 4px 14px rgba(236,111,160,.18); }
+.tier-node.locked { opacity:.62; }
+.tier-av { position:relative; display:flex; justify-content:center; }
+.tier-node.locked .tier-av svg { filter:grayscale(.7) brightness(.96); }
+.tier-lock { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:20px; }
+.tier-nm { font-weight:700; font-size:12px; color:var(--navy); margin-top:4px; }
+.tier-lv { font-size:11px; color:var(--muted); margin-top:2px; }
+.tier-node.current .tier-lv { color:var(--gold); font-weight:700; }
+.dash-today { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.dash-day-card { margin:0; display:flex; flex-direction:column; }
+.dash-day-head { display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:14px; color:var(--navy); margin-bottom:10px; }
+.dash-day-head .btn { padding:2px 8px; font-size:11px; }
+.dash-line { display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:8px; background:var(--surface2); margin-bottom:5px; font-size:13px; }
+.dash-line-time { font-size:11px; font-weight:700; color:var(--primary); min-width:34px; }
+.dash-line-name { flex:1; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dash-line-val { font-weight:700; color:var(--red); font-size:12px; }
+.dash-chk { cursor:pointer; }
+.dash-chk.done .dash-line-name { text-decoration:line-through; color:var(--muted); }
+.dash-chk-box { width:16px; height:16px; border-radius:5px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; }
+.dash-chk.done .dash-chk-box { background:var(--green); border-color:var(--green); }
+.dash-empty { color:var(--muted); font-size:12px; padding:8px 4px; }
 
 /* BUTTONS */
 .btn {
@@ -233,7 +257,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 #levelup-overlay.hidden { display: none; }
 .levelup-card {
   text-align: center; padding: 40px;
-  background: linear-gradient(135deg, #1e1e2e, #2d1b69);
+  background: linear-gradient(135deg, #ffffff, #fdeef4);
   border: 2px solid var(--gold); border-radius: 20px;
 }
 .levelup-emoji { font-size: 64px; margin-bottom: 12px; animation: pulse 1s infinite; }
@@ -319,7 +343,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 
 /* CHARACTER PAGE (Dashboard) */
 .char-page {
-  background: linear-gradient(135deg, #161621, #1a1030);
+  background: linear-gradient(135deg, #ffffff, #eef7fc);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
@@ -480,7 +504,21 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   border-radius:10px; color:var(--muted); cursor:pointer; font-size:16px;
 }
 .notes-date-del-btn:hover { color:var(--red); border-color:var(--red); }
-.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:calc(100vh - 240px); }
+.notes-cal { margin-bottom:16px; max-width:340px; padding:12px 14px; }
+.ncal-head { display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:14px; }
+.ncal-nav { background:var(--surface2); border:1px solid var(--border); border-radius:8px; width:28px; height:28px; color:var(--text); cursor:pointer; font-size:16px; line-height:1; }
+.ncal-nav:hover { border-color:var(--primary); color:var(--primary); }
+.ncal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.ncal-w { text-align:center; font-size:10px; color:var(--muted); font-weight:700; padding-bottom:2px; }
+.ncal-day { position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; border-radius:7px; cursor:pointer; color:var(--text); transition:all .12s; }
+.ncal-day:hover:not(.empty) { background:var(--surface2); }
+.ncal-day.empty { cursor:default; }
+.ncal-day.today { box-shadow:inset 0 0 0 1.5px var(--gold); }
+.ncal-day.active { background:var(--primary); color:#fff; font-weight:700; }
+.ncal-dot { position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--primary); }
+.ncal-day.active .ncal-dot { background:#fff; }
+.ncal-day.alldone .ncal-dot { background:var(--green); }
+.notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:calc(100vh - 320px); }
 .notes-panel { display:flex; flex-direction:column; overflow:hidden; }
 #notes-checklist-panel { max-height:260px; overflow-y:auto; }
 .note-date-item { padding:8px 12px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--muted); transition:all .2s; margin-bottom:4px; border-left:3px solid transparent; }
@@ -549,6 +587,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
 .knowledge-rendered { flex:1; min-height:200px; line-height:1.7; font-size:14px; overflow-y:auto; padding:8px; }
 .knowledge-rendered .wiki-link { color:var(--primary-l); cursor:pointer; text-decoration:underline; }
 #knowledge-graph-canvas { width:100%; height:220px; border-radius:12px; background:var(--surface2); border:1px solid var(--border); margin-top:12px; display:block; }
+.kn-graph-big { height:calc(100vh - 260px) !important; min-height:420px; margin-top:0 !important; cursor:pointer; }
 .backlinks { margin-top:16px; }
 .backlinks-title { font-size:12px; color:var(--muted); margin-bottom:8px; font-weight:600; }
 .backlink-item { font-size:12px; color:var(--primary-l); cursor:pointer; padding:4px 8px; border-radius:6px; display:inline-block; margin:2px; background:rgba(168,85,247,.1); }
@@ -797,7 +836,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   .checklist-add #check-due { width: 100%; }
 
   /* grids empilham no celular pra não vazar da tela */
-  .grid-3, .grid-2, .attrs-grid { grid-template-columns: 1fr; }
+  .grid-3, .grid-2, .attrs-grid, .dash-today { grid-template-columns: 1fr; }
   .fin-summary-grid { grid-template-columns: 1fr 1fr; }
   .notes-layout, .knowledge-layout, .notes-right { grid-template-columns: 1fr; height: auto; min-height: 0; }
   .cards-grid, .rewards-grid, .books-grid { grid-template-columns: 1fr; }
@@ -1050,7 +1089,67 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   function getTier(level) {
     return TIERS.filter((t) => t.min <= level).pop();
   }
+  function tierIndex(level) {
+    return level >= 35 ? 5 : level >= 20 ? 4 : level >= 10 ? 3 : level >= 5 ? 2 : 1;
+  }
+  var PIX_COL = {
+    o: "#241b2e", s: "#f4c89a", S: "#d99b6c", e: "#241b2e", h: "#6b4a2b",
+    w: "#8a5a2a", l: "#b5793f", L: "#7c4e26", m: "#cdd2de", M: "#8f97a8",
+    b: "#48a0e0", B: "#2a6bb0", p: "#9160cf", P: "#6a3fa0", g: "#f0c04a",
+    G: "#c8912a", r: "#e05a4d", y: "#fff0b8", k: "#2fae7a", c: "#ffffff"
+  };
+  var PIX_MAPS = {
+    1: [
+      "................", "......hhhh......", ".....hhhhhhh....", ".....hsssssh....",
+      ".....hsssssh....", ".....seesess....", ".....ssssss.....", "......ssss......",
+      ".....ollllo.....", "....olllllo..w..", "...ollllllo.ww..", "...ollllllow....",
+      "...oll..ll.w....", "...oLl..lLo.....", "....oo..oo......", "................"
+    ],
+    2: [
+      "................", ".....rrrrrr.....", "....roooooor....", ".....hsssssh....",
+      ".....hsssssh....", ".....seesess....", ".....ssssss.....", "......ssss......",
+      ".....olllol.mm..", "....ollllllmm...", "...olllllomm....", "...ollllmm.l....",
+      "...oll.mm.llo...", "...oLl.mm.lLo...", "....oo....oo....", "................"
+    ],
+    3: [
+      "................", ".....mmmmmm.....", "....mMmmmmMm....", "....mm.ss.mm....",
+      "....m.ssss.m....", "....m.eesess....", "....mssssssm....", ".....smmms......",
+      "....obbbbbo.mm..", "...obbbbbbomm...", "..obbbbbbomm...", "..obbbbmm.b....",
+      "..obb.mm.bbo...", "..obB.mm.Bbo...", "...oo....oo....", "................"
+    ],
+    4: [
+      ".......gg.......", "....g.gGGg.g....", "....gpppppg.....", ".....psssssp....",
+      ".....psssssp....", ".....seesess....", ".....ssssss.....", "......ssss......",
+      "....oppppo..gg..", "...opppppogg...", "..oppppppgg....", ".. opppgg.p....",
+      "..opp.gg.ppo...", "..opP.gg.Ppo...", "...oo....oo....", "................"
+    ],
+    5: [
+      "......yyyy......", "....yggGGggy....", "....gGGGGGGg....", ".....gsssssg....",
+      ".....gsssssg....", ".....seeyess....", ".....ssssss.....", "......ssss......",
+      "....gggggg.yy...", "...ogggggoyy...", "..oggggggyy....", "..ogggyy.g.....",
+      "..ogg.yy.ggo...", "..oGg.yy.gGo...", "...oo....oo....", "................"
+    ]
+  };
+  function pixelAvatar(tier, size) {
+    const rows = PIX_MAPS[tier] || PIX_MAPS[1];
+    const px = 6;
+    let rects = "";
+    rows.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const c = row[x];
+        if (c === "." || c === " ") continue;
+        const col = PIX_COL[c] || "#888";
+        rects += `<rect x="${x * px}" y="${y * px}" width="${px}" height="${px}" fill="${col}"/>`;
+      }
+    });
+    const glow = tier === 5 ? `<rect x="0" y="0" width="96" height="96" fill="url(#lg)"/>` : "";
+    const defs = tier === 5 ? `<defs><radialGradient id="lg"><stop offset="0%" stop-color="rgba(255,224,138,.35)"/><stop offset="70%" stop-color="rgba(255,224,138,0)"/></radialGradient></defs>` : "";
+    return `<svg viewBox="0 0 96 96" width="${size}" height="${size}" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">${defs}${glow}${rects}</svg>`;
+  }
   function getAvatarSVG(level, size = 96) {
+    return pixelAvatar(tierIndex(level), size);
+  }
+  function _oldAvatar(level, size = 96) {
     const tier = level >= 35 ? 5 : level >= 20 ? 4 : level >= 10 ? 3 : level >= 5 ? 2 : 1;
     const svgs = {
       1: `<svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
@@ -1255,9 +1354,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       }
       drawCalendar();
     };
-    window._openAddEvent = openAddEventModal;
+    window._openAddEvent = () => openAddEventModal();
     window._selectDay = selectDay;
     window._deleteEvent = deleteEvent;
+    window._editEvent = editEvent;
     window._gcalConnect = () => gcalConnect();
     window._gcalDisconnect = () => { gcalDisconnect(); renderGcalCard(); drawCalendar(); };
     window._gcalRefresh = () => { gcalKick(); gcalCache = {}; gcalFetchMonth(calState.year, calState.month).then(() => { drawCalendar(); renderGcalCard(); }); };
@@ -1331,9 +1431,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     <div class="event-item">
       <span class="event-time">${e.allDay ? "Dia todo" : e.time || "--:--"}</span>
       <span class="event-name">${e.name}${e.google ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle">Google</span>` : ""}</span>
+      ${e.google ? "" : `<button class="tx-edit" onclick="window._editEvent('${e.id}')" title="Editar">\u270f\ufe0f</button>`}
       <button class="event-delete" onclick="window._deleteEvent('${e.id}')">\u2715</button>
     </div>
   `).join("");
+  }
+  function editEvent(id) {
+    const ev = (storage_default.get("events") || []).find((e) => e.id === id);
+    if (ev) openAddEventModal(ev);
   }
   async function deleteEvent(id) {
     const local = (storage_default.get("events") || []).find((e) => e.id === id);
@@ -1495,39 +1600,43 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       el.innerHTML = `<div class="card-title">\u{1F4CC} Google Calendar</div><p style="color:var(--muted);font-size:13px;margin-bottom:10px">Conecte para ver e criar eventos direto na sua agenda do Google.</p><button class="btn btn-primary btn-sm" onclick="window._gcalConnect()">\u{1F517} Conectar Google Calendar</button>`;
     }
   }
-  function openAddEventModal() {
+  function openAddEventModal(existing) {
     gcalKick();
-    const date = calState.selected || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const isEdit = existing && existing.id;
+    const p = existing || {};
+    const date = p.date || calState.selected || (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     const connected = gcalConnected();
+    const escv = (s = "") => String(s).replace(/"/g, "&quot;");
     window._modalContent(`
-    <div class="modal-title">\u{1F4C5} Novo Evento</div>
+    <div class="modal-title">\u{1F4C5} ${isEdit ? "Editar Evento" : "Novo Evento"}</div>
     <div class="form-group">
-      <input id="ev-name" class="ev-title-input" placeholder="Adicionar t\xEDtulo">
+      <input id="ev-name" class="ev-title-input" placeholder="Adicionar t\xEDtulo" value="${escv(p.name)}">
     </div>
-    <label class="ev-check"><input type="checkbox" id="ev-allday" onchange="window._evToggleAllDay()"> Dia inteiro</label>
+    <label class="ev-check"><input type="checkbox" id="ev-allday" ${p.allDay ? "checked" : ""} onchange="window._evToggleAllDay()"> Dia inteiro</label>
     <div class="form-row">
       <div class="form-group"><label>In\xEDcio</label><input type="date" id="ev-date" value="${date}"></div>
-      <div class="form-group ev-time-field"><label>Hora in\xEDcio</label><input type="time" id="ev-time" value="09:00"></div>
+      <div class="form-group ev-time-field"><label>Hora in\xEDcio</label><input type="time" id="ev-time" value="${p.time || "09:00"}"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Fim</label><input type="date" id="ev-enddate" value="${date}"></div>
-      <div class="form-group ev-time-field"><label>Hora fim</label><input type="time" id="ev-endtime" value="10:00"></div>
+      <div class="form-group"><label>Fim</label><input type="date" id="ev-enddate" value="${p.endDate || date}"></div>
+      <div class="form-group ev-time-field"><label>Hora fim</label><input type="time" id="ev-endtime" value="${p.endTime || "10:00"}"></div>
     </div>
-    <div class="form-group"><label>\u{1F4CD} Local</label><input id="ev-loc" placeholder="Adicionar local"></div>
-    <div class="form-group"><label>\u{1F4DD} Descri\xE7\xE3o</label><textarea id="ev-notes" placeholder="Detalhes opcionais..."></textarea></div>
-    ${connected ? `<label class="ev-check"><input type="checkbox" id="ev-gcal" checked> ➕ Adicionar tamb\xE9m ao Google Calendar</label>` : `<p style="color:var(--muted);font-size:12px;line-height:1.5">\u{1F4A1} Conecte o Google Calendar (card na Agenda) para enviar eventos direto pra sua conta.</p>`}
-    <button class="btn btn-primary" style="width:100%;margin-top:12px" id="ev-save-btn" onclick="window._saveEvent()">Salvar Evento</button>
+    <div class="form-group"><label>\u{1F4CD} Local</label><input id="ev-loc" placeholder="Adicionar local" value="${escv(p.location)}"></div>
+    <div class="form-group"><label>\u{1F4DD} Descri\xE7\xE3o</label><textarea id="ev-notes" placeholder="Detalhes opcionais...">${esc(p.notes || "")}</textarea></div>
+    ${!isEdit && connected ? `<label class="ev-check"><input type="checkbox" id="ev-gcal" checked> ➕ Adicionar tamb\xE9m ao Google Calendar</label>` : ""}
+    <button class="btn btn-primary" style="width:100%;margin-top:12px" id="ev-save-btn" onclick="window._saveEvent()">${isEdit ? "Salvar altera\xE7\xF5es" : "Salvar Evento"}</button>
   `);
     window._evToggleAllDay = () => {
       const on = document.getElementById("ev-allday").checked;
       document.querySelectorAll(".ev-time-field").forEach((f) => f.style.display = on ? "none" : "");
     };
+    window._evToggleAllDay();
     window._saveEvent = async () => {
       const name = document.getElementById("ev-name").value.trim();
       if (!name) return;
       const allDay = document.getElementById("ev-allday").checked;
-      const ev = {
-        id: Date.now().toString(), name,
+      const data = {
+        name,
         date: document.getElementById("ev-date").value,
         endDate: document.getElementById("ev-enddate").value,
         time: allDay ? "" : document.getElementById("ev-time").value,
@@ -1536,6 +1645,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         location: document.getElementById("ev-loc").value.trim(),
         notes: document.getElementById("ev-notes").value
       };
+      if (isEdit) {
+        storage_default.update("events", (evs) => evs.map((e) => e.id === p.id ? { ...e, ...data } : e));
+        window._closeModal();
+        calState.selected = data.date;
+        drawCalendar();
+        return;
+      }
+      const ev = { id: Date.now().toString(), ...data };
       const toGoogle = document.getElementById("ev-gcal");
       if (toGoogle && toGoogle.checked && gcalConnected()) {
         const btn = document.getElementById("ev-save-btn");
@@ -1815,11 +1932,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       <h1><span>\u{1F4DD}</span> Notas Di\xE1rias</h1>
       <button class="btn btn-primary btn-sm" onclick="window._noteToday()">\u{1F4C5} Hoje</button>
     </div>
-    <div class="notes-topbar">
-      <span class="notes-topbar-label">\u{1F4C6} Dia</span>
-      <select id="notes-date-select" class="notes-date-select" onchange="window._selectNoteDate(this.value)"></select>
-      <button id="notes-date-del-btn" class="notes-date-del-btn" title="Excluir notas deste dia" onclick="window._deleteActiveNoteDate()">\u{1F5D1}</button>
-    </div>
+    <div class="notes-cal card" id="notes-cal"></div>
     <div class="notes-right">
       <div class="notes-panel card" id="notes-checklist-panel"></div>
       <div class="notes-panel card" id="notes-text-panel"></div>
@@ -1871,26 +1984,47 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     }
     return days;
   }
+  var noteCalMonth = todayStr().slice(0, 7);
   function renderDateList() {
-    const notes = storage_default.get("notes") || {};
-    const dates = last30Days();
-    Object.keys(notes).forEach((d) => {
-      if (!dates.includes(d) && hasContent(notes[d])) dates.push(d);
-    });
-    const el = document.getElementById("notes-date-select");
+    const el = document.getElementById("notes-cal");
     if (!el) return;
-    el.innerHTML = dates.map((d) => {
-      const n = notes[d] || {};
-      const done = (n.checklist || []).filter((i) => i.done).length;
+    const notes = storage_default.get("notes") || {};
+    const [y, m] = noteCalMonth.split("-").map(Number);
+    const monthName = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const first = new Date(y, m - 1, 1).getDay();
+    const days = new Date(y, m, 0).getDate();
+    let cells = "";
+    for (let i = 0; i < first; i++) cells += `<div class="ncal-day empty"></div>`;
+    for (let d = 1; d <= days; d++) {
+      const ds = `${y}-${pad(m)}-${pad(d)}`;
+      const n = notes[ds] || {};
+      const has = hasContent(n);
       const total = (n.checklist || []).length;
-      const filled = hasContent(n);
-      const mark = total ? ` \u2014 ${done}/${total}${done === total ? " \u2705" : ""}` : filled ? " \u2022" : "";
-      return `<option value="${d}" ${d === activeDate ? "selected" : ""}>${fmtDate(d)}${mark}</option>`;
-    }).join("");
-    const delBtn = document.getElementById("notes-date-del-btn");
-    if (delBtn) delBtn.style.display = hasContent(notes[activeDate]) ? "" : "none";
+      const allDone = total && (n.checklist || []).every((i) => i.done);
+      cells += `<div class="ncal-day ${ds === activeDate ? "active" : ""} ${ds === todayStr() ? "today" : ""} ${has ? "has" : ""} ${allDone ? "alldone" : ""}" onclick="window._selectNoteDate('${ds}')">${d}${has ? '<span class="ncal-dot"></span>' : ""}</div>`;
+    }
+    el.innerHTML = `
+      <div class="ncal-head">
+        <button class="ncal-nav" onclick="window._noteCalNav(-1)">\u2039</button>
+        <b style="text-transform:capitalize">${monthName}</b>
+        <button class="ncal-nav" onclick="window._noteCalNav(1)">\u203a</button>
+        <button class="notes-date-del-btn" title="Excluir notas do dia selecionado" onclick="window._deleteActiveNoteDate()" style="margin-left:auto;${hasContent(notes[activeDate]) ? "" : "visibility:hidden"}">\u{1F5D1}</button>
+      </div>
+      <div class="ncal-grid">
+        ${["D", "S", "T", "Q", "Q", "S", "S"].map((w) => `<div class="ncal-w">${w}</div>`).join("")}
+        ${cells}
+      </div>`;
+    window._noteCalNav = (dir) => {
+      let [yy, mm] = noteCalMonth.split("-").map(Number);
+      mm += dir;
+      if (mm < 1) { mm = 12; yy--; }
+      if (mm > 12) { mm = 1; yy++; }
+      noteCalMonth = `${yy}-${pad(mm)}`;
+      renderDateList();
+    };
     window._selectNoteDate = (d) => {
       activeDate = d;
+      noteCalMonth = d.slice(0, 7);
       render();
     };
     window._deleteActiveNoteDate = () => window._deleteNoteDate(activeDate);
@@ -1967,13 +2101,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         renderPanels();
       };
       window._toggleCheck = (i) => {
+        let isNowDone = false;
         storage_default.update("notes", (ns) => {
           const item = ns[activeDate].checklist[i];
           item.done = !item.done;
+          isNowDone = item.done;
           return ns;
         });
-        const wasDone = (storage_default.get("notes")[activeDate].checklist[i] || {}).done;
-        if (!wasDone) {
+        if (isNowDone) {
           checkStreak();
           addXP(10, "missao");
         }
@@ -2370,25 +2505,35 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   // js/knowledge.js
   var activeNoteId = null;
   var isEditing = false;
+  var knTab = "notas";
   function renderKnowledge(container) {
+    window._knTab = (t) => { knTab = t; renderKnowledge(container); };
     container.innerHTML = `
     <div class="section-header">
-      <h1><span>\u{1F9E0}</span> Base de Conhecimento</h1>
+      <h1><span>\u{1F9E0}</span> Insights</h1>
       <div style="display:flex;gap:8px">
-        <input id="kn-search" placeholder="\u{1F50D} Buscar notas..." style="width:200px" oninput="window._knSearch(this.value)">
-        <button class="btn btn-primary btn-sm" onclick="window._newKnNote()">+ Nota</button>
+        ${knTab === "notas" ? `<input id="kn-search" placeholder="\u{1F50D} Buscar notas..." style="width:200px" oninput="window._knSearch(this.value)">
+        <button class="btn btn-primary btn-sm" onclick="window._newKnNote()">+ Nota</button>` : ""}
       </div>
     </div>
+    <div class="fin-tabs">
+      <button class="fin-tab ${knTab === "notas" ? "active" : ""}" onclick="window._knTab('notas')">\u{1F4DD} Minhas Notas</button>
+      <button class="fin-tab ${knTab === "conexoes" ? "active" : ""}" onclick="window._knTab('conexoes')">\u{1F578}️ Conex\xF5es</button>
+    </div>
+    ${knTab === "notas" ? `
     <div class="knowledge-layout">
       <div class="knowledge-sidebar card" style="padding:12px">
         <div class="card-title">Notas</div>
         <div id="kn-note-list"></div>
-        <canvas id="knowledge-graph-canvas"></canvas>
       </div>
       <div class="card" style="display:flex;flex-direction:column">
         <div id="kn-editor"></div>
       </div>
-    </div>
+    </div>` : `
+    <div class="card" style="padding:14px">
+      <p style="color:var(--muted);font-size:13px;margin-bottom:10px">Cada nota \xE9 um n\xF3. As linhas s\xE3o as liga\xE7\xF5es que voc\xEA cria com <b>[[nome da nota]]</b>; as pontilhadas conectam notas que compartilham a mesma <b>#tag</b>. Clique num n\xF3 para abrir a nota.</p>
+      <canvas id="knowledge-graph-canvas" class="kn-graph-big"></canvas>
+    </div>`}
   `;
     window._newKnNote = () => createNote();
     window._knSearch = (q) => renderNoteList(q);
@@ -2396,15 +2541,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     window._deleteKnNote = (id) => deleteNote(id);
     window._saveKnNote = () => saveNote();
     window._toggleView = () => toggleView();
-    renderNoteList();
-    if (!activeNoteId) {
-      const notes = storage_default.get("knowledge") || [];
-      if (notes.length) openNote(notes[0].id);
-      else showEmpty();
+    if (knTab === "notas") {
+      renderNoteList();
+      if (!activeNoteId) {
+        const notes = storage_default.get("knowledge") || [];
+        if (notes.length) openNote(notes[0].id);
+        else showEmpty();
+      } else {
+        openNote(activeNoteId);
+      }
     } else {
-      openNote(activeNoteId);
+      const cv = document.getElementById("knowledge-graph-canvas");
+      if (cv) cv.onclick = (ev) => window._graphClick(ev);
+      setTimeout(drawGraph, 30);
     }
-    drawGraph();
   }
   function renderNoteList(query = "") {
     const notes = storage_default.get("knowledge") || [];
@@ -2571,52 +2721,88 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     </div>
   `;
   }
+  var _graphPos = {};
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#37A9DE";
+  }
   function drawGraph() {
     const canvas = document.getElementById("knowledge-graph-canvas");
     if (!canvas) return;
+    const big = canvas.classList.contains("kn-graph-big");
     const notes = storage_default.get("knowledge") || [];
     const ctx = canvas.getContext("2d");
     canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    canvas.height = canvas.offsetHeight || 220;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!notes.length) return;
+    if (!notes.length) {
+      ctx.fillStyle = cssVar("--muted");
+      ctx.font = "13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Crie notas com [[links]] e #tags para ver as conex\xF5es.", canvas.width / 2, canvas.height / 2);
+      return;
+    }
     const W = canvas.width, H = canvas.height;
     const positions = {};
-    notes.forEach((n, i) => {
-      const angle = i / notes.length * Math.PI * 2;
-      const r = Math.min(W, H) * 0.35;
-      positions[n.id] = {
-        x: W / 2 + Math.cos(angle) * r,
-        y: H / 2 + Math.sin(angle) * r
-      };
-    });
-    ctx.strokeStyle = "rgba(124,58,237,.3)";
-    ctx.lineWidth = 1;
+    const deg = {};
+    notes.forEach((n) => deg[n.id] = 0);
+    const linkPairs = [];
     notes.forEach((n) => {
-      const matches = [...(n.content || "").matchAll(/\[\[(.+?)\]\]/g)];
-      matches.forEach(([, title]) => {
-        const target = notes.find((x) => x.title.toLowerCase() === title.toLowerCase());
-        if (target && positions[n.id] && positions[target.id]) {
-          ctx.beginPath();
-          ctx.moveTo(positions[n.id].x, positions[n.id].y);
-          ctx.lineTo(positions[target.id].x, positions[target.id].y);
-          ctx.stroke();
-        }
+      [...(n.content || "").matchAll(/\[\[(.+?)\]\]/g)].forEach(([, title]) => {
+        const t = notes.find((x) => (x.title || "").toLowerCase() === title.toLowerCase());
+        if (t) { linkPairs.push([n.id, t.id, "link"]); deg[n.id]++; deg[t.id]++; }
       });
+    });
+    const tagPairs = [];
+    for (let i = 0; i < notes.length; i++) for (let j = i + 1; j < notes.length; j++) {
+      const a = (notes[i].tags || []).map((t) => t.toLowerCase());
+      const b = (notes[j].tags || []).map((t) => t.toLowerCase());
+      if (a.some((t) => b.includes(t))) { tagPairs.push([notes[i].id, notes[j].id, "tag"]); deg[notes[i].id]++; deg[notes[j].id]++; }
+    }
+    notes.forEach((n, i) => {
+      const angle = i / notes.length * Math.PI * 2 - Math.PI / 2;
+      const r = Math.min(W, H) * (big ? 0.38 : 0.35);
+      positions[n.id] = { x: W / 2 + Math.cos(angle) * r, y: H / 2 + Math.sin(angle) * r };
+    });
+    _graphPos = big ? positions : _graphPos;
+    tagPairs.forEach(([a, b]) => {
+      ctx.strokeStyle = "rgba(236,111,160,.45)";
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(positions[a].x, positions[a].y); ctx.lineTo(positions[b].x, positions[b].y); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    linkPairs.forEach(([a, b]) => {
+      ctx.strokeStyle = "rgba(55,169,222,.55)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(positions[a].x, positions[a].y); ctx.lineTo(positions[b].x, positions[b].y); ctx.stroke();
     });
     notes.forEach((n) => {
       const { x, y } = positions[n.id];
       const isActive = n.id === activeNoteId;
+      const size = (big ? 6 : 4) + Math.min(6, deg[n.id]);
       ctx.beginPath();
-      ctx.arc(x, y, isActive ? 8 : 5, 0, Math.PI * 2);
-      ctx.fillStyle = isActive ? "#f59e0b" : "#7c3aed";
+      ctx.arc(x, y, isActive ? size + 3 : size, 0, Math.PI * 2);
+      ctx.fillStyle = isActive ? cssVar("--gold") : cssVar("--primary");
       ctx.fill();
-      ctx.fillStyle = "#e2e8f0";
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(n.title.slice(0, 12), x, y - 10);
+      if (big) {
+        ctx.fillStyle = cssVar("--navy");
+        ctx.font = "600 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText((n.title || "sem t\xEDtulo").slice(0, 18), x, y - size - 6);
+      }
     });
   }
+  window._graphClick = (ev) => {
+    const canvas = ev.target;
+    const rect = canvas.getBoundingClientRect();
+    const mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+    let best = null, bd = 400;
+    Object.entries(_graphPos).forEach(([id, p]) => {
+      const d = (p.x - mx) ** 2 + (p.y - my) ** 2;
+      if (d < bd) { bd = d; best = id; }
+    });
+    if (best) { knTab = "notas"; activeNoteId = best; renderKnowledge(document.getElementById("insights")); }
+  };
   function escHtml(s) {
     return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
@@ -3275,7 +3461,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       ${isEdit ? "" : `<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0"><input type="checkbox" id="frec" checked> Repetir nos pr\xF3ximos meses</label>
       <div class="form-group"><label>Por quantos meses?</label><input type="number" id="fcount" min="1" max="60" value="12"></div>`}`;
       else if (type === "variable") el.innerHTML = `
-      <div class="form-group"><label>Descri\xE7\xE3o</label><input id="fn" placeholder="Supermercado, Uber..." value="${esc4(pre.name)}"></div>
+      <div class="form-group"><label>Descri\xE7\xE3o</label><input id="fn" placeholder="Supermercado, Uber, Netflix..." value="${esc4(pre.name)}"></div>
       <div class="form-row">
         <div class="form-group"><label>Valor total (R$)</label><input type="number" id="fv" min="0" step="0.01" value="${pre.amount ?? ""}"></div>
         <div class="form-group"><label>Data da compra</label><input type="date" id="fd" value="${pre.date || todayISO()}"></div>
@@ -3283,8 +3469,18 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       <div class="form-group"><label>Categoria</label><select id="fc">${catOpts(varCatList, pre.category)}</select></div>
       <div class="form-group"><label>Forma de Pag.</label>
         <select id="fpay" onchange="window._finPayChange(this.value)">${payOpts(["Cr\xE9dito", "D\xE9bito", "PIX", "Dinheiro"], pre.paymentMethod)}</select></div>
-      <div class="form-group" id="fcard-wrap" style="${hasCards ? "" : "display:none"}"><label>Cart\xE3o</label><select id="fcard">${cardOpts(pre.cardId)}</select></div>
-      ${isEdit ? "" : `<div class="form-group"><label>Parcelas</label><input type="number" id="fparc" min="1" max="60" value="1"><small style="color:var(--muted);font-size:11px">Se mais de 1, o valor \xE9 dividido e cada parcela cai num m\xEAs.</small></div>`}`;
+      <div class="form-group" id="fcard-wrap" style="display:none"><label>Cart\xE3o *</label><select id="fcard">${cardOpts(pre.cardId)}</select>${hasCards ? "" : `<small style="color:var(--red);font-size:11px">Cadastre um cart\xE3o na aba Cart\xF5es primeiro.</small>`}</div>
+      ${isEdit ? "" : `<div id="fmode-wrap" style="display:none">
+        <div class="form-group"><label>Tipo no cart\xE3o</label>
+          <select id="fmode" onchange="window._finModeChange(this.value)">
+            <option value="avista">\u{1F4B3} \xC0 vista (1x)</option>
+            <option value="compra">\u{1F9FE} Compra parcelada</option>
+            <option value="assinatura">\u{1F501} Assinatura recorrente</option>
+          </select>
+        </div>
+        <div class="form-group" id="fparc-wrap" style="display:none"><label>N\xBA de parcelas</label><input type="number" id="fparc" min="2" max="60" value="2"><small style="color:var(--muted);font-size:11px">Valor total \xF7 parcelas. Aparece tamb\xE9m na aba D\xEDvidas.</small></div>
+        <div class="form-group" id="fmonths-wrap" style="display:none"><label>Por quantos meses?</label><input type="number" id="fmonths" min="1" max="60" value="12"><small style="color:var(--muted);font-size:11px">Valor cheio descontado todo m\xEAs.</small></div>
+      </div>`}`;
       else if (type === "debt") el.innerHTML = `
       <div class="form-group"><label>Nome da D\xEDvida</label><input id="fn" placeholder="Cart\xE3o XYZ, Empr\xE9stimo..." value="${esc4(pre.name)}"></div>
       <div class="form-row">
@@ -3319,9 +3515,24 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
         const el2 = document.getElementById("bank-color-preview");
         if (el2) el2.style.background = bankColor(v);
       };
+      window._finModeChange = (m) => {
+        const p = document.getElementById("fparc-wrap"), s = document.getElementById("fmonths-wrap");
+        if (p) p.style.display = m === "compra" ? "" : "none";
+        if (s) s.style.display = m === "assinatura" ? "" : "none";
+      };
       window._finPayChange = (v) => {
+        const isCard = v === "Cr\xE9dito" || v === "D\xE9bito";
         const wrap = document.getElementById("fcard-wrap");
-        if (wrap) wrap.style.display = v === "Cr\xE9dito" && hasCards ? "" : "none";
+        if (wrap) wrap.style.display = isCard ? "" : "none";
+        const modeWrap = document.getElementById("fmode-wrap");
+        if (modeWrap) modeWrap.style.display = v === "Cr\xE9dito" ? "" : "none";
+        if (v !== "Cr\xE9dito") {
+          const m = document.getElementById("fmode");
+          if (m) {
+            m.value = "avista";
+            window._finModeChange("avista");
+          }
+        }
       };
       window._finPayChange(document.getElementById("fpay")?.value);
     };
@@ -3331,6 +3542,13 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       const name = val("fn")?.trim();
       const amount = parseFloat(val("fv") || 0);
       const baseId = isEdit ? edit.item.id : Date.now().toString();
+      if (type === "variable" || type === "fixed") {
+        const pay = val("fpay");
+        if ((pay === "Cr\xE9dito" || pay === "D\xE9bito") && !val("fcard")) {
+          alert("Selecione o cart\xE3o para pagamentos no cr\xE9dito/d\xE9bito.");
+          return;
+        }
+      }
       storage_default.update("finance", (f) => {
         if (isEdit) {
           const arr = { incomes: "incomes", fixed: "fixedExpenses", variable: "variableExpenses", debt: "debts", saving: "savings", card: "creditCards" }[type];
@@ -3384,11 +3602,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
           for (let i = 0; i < count; i++) f.fixedExpenses.push({ id: count > 1 ? `${baseId}-${i}` : baseId, groupId, name, amount, date: addMonths(due, i), category: cat, paymentMethod: pay, cardId, recurring: repeat, status: "topay", occNo: i + 1, occTotal: count });
         } else if (type === "variable") {
           const date = val("fd") || todayISO();
-          const parcels = Math.max(1, +val("fparc") || 1);
           const cardId = val("fcard") || "", pay = val("fpay"), cat = val("fc");
-          const per = Math.round(amount / parcels * 100) / 100;
-          const groupId = parcels > 1 ? baseId : "";
-          for (let i = 0; i < parcels; i++) f.variableExpenses.push({ id: parcels > 1 ? `${baseId}-${i}` : baseId, groupId, name: parcels > 1 ? `${name} (${i + 1}/${parcels})` : name, amount: per, date: addMonths(date, i), category: cat, paymentMethod: pay, cardId, installments: parcels > 1 ? parcels : void 0, installmentNo: parcels > 1 ? i + 1 : void 0 });
+          const mode = document.getElementById("fmode")?.value || "avista";
+          const cardNm = (f.creditCards || []).find((c) => c.id === cardId)?.name || "Cart\xE3o";
+          if (pay === "Cr\xE9dito" && mode === "compra") {
+            const parcels = Math.max(2, +val("fparc") || 2);
+            const per = Math.round(amount / parcels * 100) / 100;
+            for (let i = 0; i < parcels; i++) f.variableExpenses.push({ id: `${baseId}-${i}`, groupId: baseId, name: `${name} (${i + 1}/${parcels})`, amount: per, date: addMonths(date, i), category: cat, paymentMethod: pay, cardId, installments: parcels, installmentNo: i + 1 });
+            f.debts.push({ id: `${baseId}-debt`, name: `${name} (${parcels}x)`, total: amount, paid: 0, creditor: cardNm, dueDate: addMonths(date, parcels - 1), fromInstallment: baseId });
+          } else if (pay === "Cr\xE9dito" && mode === "assinatura") {
+            const months = Math.max(1, +val("fmonths") || 12);
+            for (let i = 0; i < months; i++) f.variableExpenses.push({ id: `${baseId}-${i}`, groupId: baseId, name, amount, date: addMonths(date, i), category: cat, paymentMethod: pay, cardId, subscription: true });
+          } else {
+            f.variableExpenses.push({ id: baseId, name, amount, date, category: cat, paymentMethod: pay, cardId });
+          }
         } else if (type === "debt") f.debts.push({ id: baseId, name, total: amount, paid: parseFloat(val("fpaid") || 0), creditor: val("fcred"), dueDate: val("fd") });
         else if (type === "saving") f.savings.push({ id: baseId, name, target: amount, current: parseFloat(val("fcur") || 0), targetDate: val("fd") });
         else if (type === "card") f.creditCards.push({ id: baseId, name, bank: val("fbank"), lastDigits: val("fdig"), limit: amount, closingDay: +val("fclose") || 7, dueDay: +val("fdue") || 14 });
@@ -4444,7 +4671,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
   // js/app.js
   storage_default.init();
   window._onStorageChange = () => schedulePush();
-  var THEME_DEFAULTS = { primary: "#7c3aed", gold: "#f59e0b", bg: "#0d0d14" };
+  var THEME_DEFAULTS = { primary: "#37A9DE", gold: "#EC6FA0", bg: "#F4F1EA" };
   function lightenHex(hex, amt = 40) {
     try {
       const n = (i) => Math.min(255, parseInt(hex.slice(i, i + 2), 16) + amt).toString(16).padStart(2, "0");
@@ -4606,6 +4833,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     if (s === "dashboard") renderDashboard2();
     else if (RENDERERS[s]) RENDERERS[s](document.getElementById(s));
   }
+  window._navSection = (s) => {
+    navigate(s);
+    document.querySelectorAll(".nav-list li").forEach((x) => x.classList.toggle("active", x.dataset.section === s));
+  };
   window.openSettings = () => {
     const char = storage_default.get("character");
     const emojis = ["\u{1F9D9}", "\u{1F9DD}", "\u{1F9DB}", "\u{1F9DF}", "\u{1F9B8}", "\u{1F9B9}", "\u{1F9D1}\u200D\u{1F4BB}", "\u{1F468}\u200D\u{1F680}", "\u{1F977}", "\u2694\uFE0F"];
@@ -4766,6 +4997,22 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       </div>
     </div>
     <div class="card" style="margin-top:16px">
+      <div class="card-title">\u{1F5FA}️ Jornada de Evolu\xE7\xE3o</div>
+      <p style="color:var(--muted);font-size:12px;margin:-4px 0 12px">Suba de n\xEDvel completando miss\xF5es, h\xE1bitos e objetivos. Veja no que voc\xEA pode se tornar:</p>
+      <div class="tier-road">
+        ${TIERS.map((t, idx) => {
+      const ti = idx + 1;
+      const cur = tierIndex(char.level) === ti;
+      const unlocked = char.level >= t.min;
+      return `<div class="tier-node ${cur ? "current" : ""} ${unlocked ? "unlocked" : "locked"}">
+            <div class="tier-av">${pixelAvatar(ti, 58)}${unlocked ? "" : '<span class="tier-lock">\u{1F512}</span>'}</div>
+            <div class="tier-nm">${t.emoji} ${t.name}</div>
+            <div class="tier-lv">${cur ? "⭐ Atual" : unlocked ? "✓ Desbloqueado" : "N\xEDvel " + t.min}</div>
+          </div>`;
+    }).join("")}
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
       <div class="card-title">\u{1F3C6} Conquistas</div>
       <div class="achievements-grid">
         ${ACHIEVEMENTS.map((a) => `
@@ -4820,6 +5067,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     const tasks = (storage_default.get("tasks") || []).filter((t) => !t.date || t.date === today);
     const done = tasks.filter((t) => t.done).length;
     const svg = getAvatarSVG(char.level, 80);
+    const tISO = todayStr();
+    const _evLocal = (storage_default.get("events") || []).filter((e) => e.date === tISO);
+    const _evGoog = (typeof gcalMonthCached === "function" ? gcalMonthCached(calState.year, calState.month) : []).filter((e) => e.date === tISO);
+    const _gset = new Set(_evGoog.map((e) => e.gid));
+    const compromissos = [..._evLocal.filter((e) => !(e.gid && _gset.has(e.gid))), ..._evGoog].sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
+    const _noteToday = (storage_default.get("notes") || {})[tISO] || { checklist: [] };
+    const chk = _noteToday.checklist || [];
+    const chkDone = chk.filter((i) => i.done).length;
+    const _fin = storage_default.get("finance") || {};
+    const despesas = [...(_fin.fixedExpenses || []), ...(_fin.variableExpenses || [])].filter((x) => (x.date || "").slice(0, 10) === tISO);
+    const despTotal = despesas.reduce((s, x) => s + x.amount, 0);
+    if (typeof gcalConnected === "function" && gcalConnected() && typeof gcalMonthCached === "function" && !gcalMonthCached(calState.year, calState.month).length) {
+      gcalFetchMonth(calState.year, calState.month).then((r) => { if (r && r.length) renderDashboard2(); });
+    }
     document.getElementById("dashboard").innerHTML = `
     <div class="char-page" style="padding:20px">
       <div class="char-left" style="min-width:100px">
@@ -4860,7 +5121,23 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
       <div class="card" style="margin:0"><div class="card-title">Conquistas</div><div style="font-size:28px;font-weight:700;color:var(--primary-l)">${char.achievements.length}</div></div>
     </div>
 
-    <div class="card">
+    <div style="font-size:15px;font-weight:800;color:var(--navy);margin:4px 2px 10px">\u{1F31E} Seu dia \u2014 ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}</div>
+    <div class="dash-today">
+      <div class="card dash-day-card">
+        <div class="dash-day-head"><span>\u{1F4C5} Compromissos</span><button class="btn btn-ghost btn-sm" onclick="window._navSection('agenda')">ver +</button></div>
+        ${compromissos.length ? compromissos.map((e) => `<div class="dash-line"><span class="dash-line-time">${e.allDay ? "dia" : e.time || "--:--"}</span><span class="dash-line-name">${esc(e.name)}${e.google ? ' <span class="badge badge-blue" style="font-size:8px">G</span>' : ""}</span></div>`).join("") : `<div class="dash-empty">Nada agendado hoje.</div>`}
+      </div>
+      <div class="card dash-day-card">
+        <div class="dash-day-head"><span>\u2705 Checklist ${chk.length ? `<span style="color:var(--muted);font-weight:600;font-size:12px">${chkDone}/${chk.length}</span>` : ""}</span><button class="btn btn-ghost btn-sm" onclick="window._navSection('notas')">ver +</button></div>
+        ${chk.length ? chk.slice(0, 6).map((i, idx) => `<div class="dash-line dash-chk ${i.done ? "done" : ""}" onclick="window._dashToggleChk(${idx})"><span class="dash-chk-box">${i.done ? "\u2713" : ""}</span><span class="dash-line-name">${esc(i.text)}</span></div>`).join("") : `<div class="dash-empty">Sem itens no checklist de hoje.</div>`}
+      </div>
+      <div class="card dash-day-card">
+        <div class="dash-day-head"><span>\u{1F4B8} Despesas ${despesas.length ? `<span style="color:var(--red);font-weight:700;font-size:12px">${fmtMoney(despTotal)}</span>` : ""}</span><button class="btn btn-ghost btn-sm" onclick="window._navSection('financas')">ver +</button></div>
+        ${despesas.length ? despesas.map((x) => `<div class="dash-line"><span class="dash-line-name">${esc(x.name)}</span><span class="dash-line-val">${fmtMoney(x.amount)}</span></div>`).join("") : `<div class="dash-empty">Nenhuma despesa vence hoje.</div>`}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div class="card-title" style="margin:0">\u2694\uFE0F Miss\xF5es de Hoje</div>
         <button class="btn btn-primary btn-sm" onclick="window._openAddTask()">+ Miss\xE3o</button>
@@ -4869,6 +5146,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px
     </div>
   `;
     renderTaskList(tasks);
+    window._dashToggleChk = (idx) => {
+      let now = false;
+      storage_default.update("notes", (ns) => {
+        ns[tISO] = ns[tISO] || { checklist: [], text: "", mood: "" };
+        const it = ns[tISO].checklist[idx];
+        if (it) { it.done = !it.done; now = it.done; }
+        return ns;
+      });
+      if (now) { checkStreak(); addXP(10, "missao"); }
+      renderDashboard2();
+    };
+  }
+  function fmtMoney(n) {
+    return "R$ " + (n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function renderTaskList(tasks) {
     const el = document.getElementById("task-list");
