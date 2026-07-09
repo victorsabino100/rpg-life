@@ -3276,19 +3276,52 @@ html[data-theme="dark"] .levelup-card button { background: var(--primary); }
     });
     renderFinContent();
   }
+  var FIN_ARR = { incomes: "incomes", fixed: "fixedExpenses", variable: "variableExpenses", debt: "debts", saving: "savings", card: "creditCards" };
   function deleteItem(type, id) {
+    const f = storage_default.get("finance") || {};
+    const arrKey = FIN_ARR[type];
+    const arr = f[arrKey] || [];
+    const item = arr.find((x) => x.id === id);
+    if (!item) return;
+    const gid = item.groupId;
+    const group = gid ? arr.filter((x) => x.groupId === gid) : [];
+    if (gid && group.length > 1) {
+      const mm = (item.date || "").slice(5, 7), yy = (item.date || "").slice(0, 4);
+      window._modalContent(`
+      <div class="modal-title">\u{1F5D1}️ Excluir recorr\xEAncia</div>
+      <p style="color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:14px"><b>${(item.name || "Este item").replace(/</g, "&lt;")}</b> se repete em ${group.length} meses. O que voc\xEA quer excluir?</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-ghost" onclick="window._delFinScope('${arrKey}','${id}','${gid}','one')">\u{1F4C5} S\xF3 deste m\xEAs (${mm}/${yy})</button>
+        <button class="btn btn-ghost" onclick="window._delFinScope('${arrKey}','${id}','${gid}','future')">⏩ Este e os pr\xF3ximos meses</button>
+        <button class="btn" style="background:var(--red);color:#fff;border:none" onclick="window._delFinScope('${arrKey}','${id}','${gid}','all')">\u{1F5D1}️ Todos (inclusive passados)</button>
+        <button class="btn btn-ghost" onclick="window._closeModal()">Cancelar</button>
+      </div>
+    `);
+      return;
+    }
     if (!confirm("Excluir este item?")) return;
-    storage_default.update("finance", (f) => {
-      if (type === "incomes") f.incomes = f.incomes.filter((x) => x.id !== id);
-      if (type === "fixed") f.fixedExpenses = f.fixedExpenses.filter((x) => x.id !== id);
-      if (type === "variable") f.variableExpenses = f.variableExpenses.filter((x) => x.id !== id);
-      if (type === "debt") f.debts = f.debts.filter((x) => x.id !== id);
-      if (type === "saving") f.savings = f.savings.filter((x) => x.id !== id);
-      if (type === "card") f.creditCards = f.creditCards.filter((x) => x.id !== id);
-      return f;
+    storage_default.update("finance", (ff) => {
+      ff[arrKey] = (ff[arrKey] || []).filter((x) => x.id !== id);
+      return ff;
     });
     renderFinContent();
   }
+  window._delFinScope = (arrKey, id, gid, scope) => {
+    const f0 = storage_default.get("finance") || {};
+    const item = (f0[arrKey] || []).find((x) => x.id === id);
+    const refDate = item ? item.date || "" : "";
+    storage_default.update("finance", (ff) => {
+      if (scope === "one") ff[arrKey] = ff[arrKey].filter((x) => x.id !== id);
+      else if (scope === "future") ff[arrKey] = ff[arrKey].filter((x) => !(x.groupId === gid && (x.date || "") >= refDate));
+      else if (scope === "all") {
+        ff[arrKey] = ff[arrKey].filter((x) => x.groupId !== gid);
+        if (arrKey === "variableExpenses" && ff.debts) ff.debts = ff.debts.filter((d) => d.fromInstallment !== gid);
+      }
+      return ff;
+    });
+    window._closeModal();
+    renderFinContent();
+  };
   function openAddModal(defaultType, edit) {
     const fin = storage_default.get("finance") || {};
     const pre = edit?.item || {};
