@@ -6347,16 +6347,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="modal-title">\u2699\uFE0F Configura\xE7\xF5es</div>
     <div class="form-group"><label>Nome de Aventureiro</label><input id="set-name" value="${char.name}"></div>
     <div class="form-group">
-      <label>\u{1F5D3} Google Calendar \u2014 Client ID</label>
+      <label>\u{1F5D3} Google Calendar</label>
       <input id="set-gcal" value="${settings.googleClientId || ""}" placeholder="xxxx.apps.googleusercontent.com">
-      <small style="color:var(--muted);font-size:11px">Obtenha em console.cloud.google.com \u2192 APIs \u2192 Credenciais \u2192 OAuth 2.0</small>
-    </div>
-    <div class="card-title" style="margin-bottom:6px">\u{1F3A8} Cores do Sistema</div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px">
-      <label style="font-size:12px;color:var(--muted)">Prim\xE1ria<br><input type="color" id="th-primary" value="${settings.themeColors?.primary || "#7c3aed"}" oninput="window._previewTheme()"></label>
-      <label style="font-size:12px;color:var(--muted)">Destaque<br><input type="color" id="th-gold" value="${settings.themeColors?.gold || "#f59e0b"}" oninput="window._previewTheme()"></label>
-      <label style="font-size:12px;color:var(--muted)">Fundo<br><input type="color" id="th-bg" value="${settings.themeColors?.bg || "#0d0d14"}" oninput="window._previewTheme()"></label>
-      <button class="btn btn-ghost btn-sm" style="align-self:flex-end" onclick="window._resetTheme()">\u21BA Padr\xE3o</button>
+      <small style="color:var(--muted);font-size:11px">Client ID OAuth \u2014 crie em console.cloud.google.com \u2192 APIs e Servi\xE7os \u2192 Credenciais \u2192 ID do cliente OAuth (tipo: Aplicativo da Web). Em \u201COrigens JavaScript autorizadas\u201D adicione <b>https://rpg.satomarketing.com.br</b></small>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="window._gcalConnectFromSettings()">\u{1F517} Conectar</button>
+        <button class="btn btn-ghost btn-sm" onclick="window._gcalDisconnectFromSettings()">Desconectar</button>
+        <span id="set-gcal-status" style="font-size:12px;color:var(--muted)"></span>
+      </div>
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="window._saveSettings()">Salvar</button>
     <hr style="border-color:var(--border);margin:16px 0">
@@ -6389,22 +6387,27 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       renderCharMini();
       openSettings();
     };
-    const readTheme = () => ({ primary: document.getElementById("th-primary").value, gold: document.getElementById("th-gold").value, bg: document.getElementById("th-bg").value });
-    window._previewTheme = () => {
-      const t = readTheme();
-      const r = document.documentElement.style;
-      r.setProperty("--primary", t.primary);
-      r.setProperty("--primary-l", lightenHex(t.primary, 40));
-      r.setProperty("--gold", t.gold);
-      r.setProperty("--bg", t.bg);
+    window._setGcalStatus = () => {
+      const st = document.getElementById("set-gcal-status");
+      if (!st) return;
+      if (gcalConnected()) { st.textContent = "✅ Conectado"; st.style.color = "var(--green)"; }
+      else if (gcalGranted) { st.textContent = "Autorizado — renova ao abrir a agenda"; st.style.color = "var(--muted)"; }
+      else { st.textContent = "N\xE3o conectado"; st.style.color = "var(--muted)"; }
     };
-    window._resetTheme = () => {
-      document.getElementById("th-primary").value = THEME_DEFAULTS.primary;
-      document.getElementById("th-gold").value = THEME_DEFAULTS.gold;
-      document.getElementById("th-bg").value = THEME_DEFAULTS.bg;
-      storage_default.update("settings", (s) => ({ ...s, themeColors: null }));
-      applyTheme();
+    window._gcalConnectFromSettings = () => {
+      const cid = document.getElementById("set-gcal").value.trim();
+      storage_default.update("settings", (s) => ({ ...s, googleClientId: cid }));
+      gcalTokenClient = null;
+      const st = document.getElementById("set-gcal-status");
+      if (!cid) { if (st) { st.textContent = "Cole o Client ID primeiro."; st.style.color = "var(--red)"; } return; }
+      if (!gcalReady()) { if (st) { st.textContent = "Google ainda carregando… tente de novo."; st.style.color = "var(--red)"; } return; }
+      if (st) { st.textContent = "Abrindo o Google…"; st.style.color = "var(--muted)"; }
+      window._afterGcalConnect = () => { window._setGcalStatus(); renderGcalCard(); if (typeof drawCalendar === "function") drawCalendar(); };
+      gcalConnect();
+      setTimeout(window._setGcalStatus, 1500);
     };
+    window._gcalDisconnectFromSettings = () => { gcalDisconnect(); window._setGcalStatus(); renderGcalCard(); };
+    window._setGcalStatus();
     const syncMsg = (m, ok) => {
       const el = document.getElementById("sync-status");
       if (el) {
@@ -6439,7 +6442,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         c.name = name;
         return c;
       });
-      storage_default.update("settings", (s) => ({ ...s, googleClientId: document.getElementById("set-gcal").value.trim(), themeColors: readTheme() }));
+      storage_default.update("settings", (s) => ({ ...s, googleClientId: document.getElementById("set-gcal").value.trim() }));
       applyTheme();
       renderCharMini();
       window._closeModal();
