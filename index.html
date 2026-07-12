@@ -507,6 +507,26 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .knowledge-rendered .wiki-link { color:var(--primary-d); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
 #knowledge-graph-canvas { width:100%; height:220px; border-radius:var(--r); background:var(--surface2); border:1px solid var(--border); margin-top:12px; display:block; touch-action:none; -webkit-tap-highlight-color:transparent; }
 .kn-graph-big { height:calc(100vh - 260px) !important; min-height:420px; margin-top:0 !important; cursor:pointer; }
+
+/* ================= FLUXOGRAMAS ================= */
+.flow-card { display:flex; align-items:center; gap:12px; padding:15px 17px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); margin-bottom:9px; cursor:pointer; transition:border-color .15s ease, transform .12s ease; box-shadow:var(--shadow-sm); }
+.flow-card:hover { border-color:var(--primary); transform:translateX(2px); }
+.flow-card-name { flex:1; font-weight:600; font-size:15px; }
+.flow-card-meta { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+.flow-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.flow-toolbar input { flex:1; min-width:120px; font-weight:700; }
+.flow-wrap { position:relative; overflow:auto; height:calc(100dvh - 320px); min-height:380px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); -webkit-overflow-scrolling:touch; }
+.flow-board { position:relative; width:1600px; height:1200px; background-image:radial-gradient(circle, var(--border) 1px, transparent 1px); background-size:28px 28px; }
+.flow-board svg { position:absolute; inset:0; width:100%; height:100%; }
+.flow-node { position:absolute; min-width:90px; max-width:180px; padding:10px 13px; background:var(--surface); border:1.8px solid var(--primary); border-radius:13px; font-size:13px; font-weight:600; color:var(--text); text-align:center; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; box-shadow:var(--shadow-sm); transform:translate(-50%,-50%); word-break:break-word; line-height:1.35; }
+.flow-node.sel { box-shadow:0 0 0 3px rgba(124,131,255,.35), var(--shadow-md); }
+.flow-node.linking { box-shadow:0 0 0 3px rgba(255,122,107,.45), var(--shadow-md); }
+.flow-editbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:11px 13px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); }
+.flow-editbar input[type="text"] { flex:1; min-width:140px; }
+.flow-swatch { width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex:0 0 auto; padding:0; }
+.flow-swatch.on { border-color:var(--text); }
+.flow-hint { font-size:12px; color:var(--muted); margin-top:8px; }
+@media (max-width:820px){ .flow-wrap { height:calc(100dvh - 380px); min-height:320px; } }
 .backlinks { margin-top:16px; }
 .backlinks-title { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
 .backlink-item { font-size:12px; color:var(--primary-d); cursor:pointer; padding:4px 9px; border-radius:100px; display:inline-block; margin:2px; background:rgba(66,178,221,.12); transition:all .15s ease; }
@@ -908,7 +928,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <ul class="nav-list">
         <li data-section="dashboard"     class="active"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg></span> Minha Sala</li>
         <li data-section="personagem">   <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.7"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg></span> Personagem</li>
-        <li data-section="agenda">       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.2"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/></svg></span> Agenda</li>
+        <li data-section="agenda">       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.2"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/></svg></span> Planejamento</li>
         <li data-section="objetivos">    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.1"/></svg></span> Objetivos</li>
         <li data-section="linha">       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5-6 3.5 13 2.5-7H21"/></svg></span> Linha do Tempo</li>
         <li data-section="insights">     <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.4v11.2"/><path d="M12 6.4A3 3 0 0 0 6.5 4.9 2.7 2.7 0 0 0 4.4 8.5 2.7 2.7 0 0 0 4 13.3 2.8 2.8 0 0 0 6.8 16.9 2.6 2.6 0 0 0 12 17.4"/><path d="M12 6.4A3 3 0 0 1 17.5 4.9 2.7 2.7 0 0 1 19.6 8.5 2.7 2.7 0 0 1 20 13.3 2.8 2.8 0 0 1 17.2 16.9 2.6 2.6 0 0 1 12 17.4"/><path d="M7.6 9.4c1 .3 1.6 1 1.8 2"/><path d="M16.4 9.4c-1 .3-1.6 1-1.8 2"/></svg></span> Brainstorming</li>
@@ -988,7 +1008,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     dayMoods: "rpg_daymoods",
     spiritual: "rpg_spiritual",
     meals: "rpg_meals",
-    shoppingCats: "rpg_shopcats"
+    shoppingCats: "rpg_shopcats",
+    flows: "rpg_flows"
   };
   var DEFAULTS = {
     character: {
@@ -1585,7 +1606,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function renderCalendar(container, embedded = false) {
     container.innerHTML = `
     ${embedded ? "" : `<div class="section-header">
-      <h1><span style="display:inline-flex;vertical-align:-4px;margin-right:8px;color:var(--primary)"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v4M16 3.5v4"/></svg></span>Agenda</h1>
+      <h1><span style="display:inline-flex;vertical-align:-4px;margin-right:8px;color:var(--primary)"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v4M16 3.5v4"/></svg></span>Planejamento</h1>
       <button class="btn btn-primary btn-sm" onclick="window._openAddEvent()">+ Evento</button>
     </div>`}
     <div class="grid-2">
@@ -1940,7 +1961,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function renderAgenda(container) {
     container.innerHTML = `
     <div class="section-header">
-      <h1><span style="display:inline-flex;vertical-align:-4px;margin-right:8px;color:var(--primary)"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v4M16 3.5v4"/></svg></span>Agenda</h1>
+      <h1><span style="display:inline-flex;vertical-align:-4px;margin-right:8px;color:var(--primary)"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 3.5v4M16 3.5v4"/></svg></span>Planejamento</h1>
       <div id="ag-header-actions"></div>
     </div>
     <div class="fin-tabs">
@@ -1948,6 +1969,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <button class="fin-tab ${agTab === "rotina" ? "active" : ""}" onclick="window._agTab('rotina')">\u23F0 Rotina Semanal</button>
       <button class="fin-tab ${agTab === "habitos" ? "active" : ""}" onclick="window._agTab('habitos')">\u2705 Rastreador de H\xE1bitos</button>
       <button class="fin-tab ${agTab === "mensal" ? "active" : ""}" onclick="window._agTab('mensal')">\u{1F5D3} Calend\xE1rio</button>
+      <button class="fin-tab ${agTab === "fluxos" ? "active" : ""}" onclick="window._agTab('fluxos')">\u{1F9E9} Fluxogramas</button>
     </div>
     <div id="ag-content"></div>
   `;
@@ -1966,6 +1988,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     if (agTab === "mensal") {
       actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="window._openAddEvent()">+ Evento</button>`;
       renderCalendar(content, true);
+    } else if (agTab === "fluxos") {
+      actions.innerHTML = flowState.openId ? "" : `<button class="btn btn-primary btn-sm" onclick="window._flNew()">+ Novo fluxograma</button>`;
+      renderFlows(content);
     } else if (agTab === "rotina") {
       actions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="window._routineAddSlot()">+ Hor\xE1rio</button>`;
       content.innerHTML = renderRoutine();
@@ -1977,6 +2002,197 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       content.innerHTML = renderHabits();
     }
   }
+  // ===== Fluxogramas (Planejamento) =====
+  var flowState = { openId: null, sel: null, linkFrom: null };
+  var flowLive = null;
+  var FLOW_COLORS = ["#7C83FF", "#FF7A6B", "#34D8B4", "#FFB454", "#56C2F5", "#C079F6", "#8A90A6"];
+  function flowsGet() { const f = storage_default.get("flows"); return f && Array.isArray(f.items) ? f : { items: [] }; }
+  function flowsSave(f) { storage_default.set("flows", f); }
+  function flowCur() { return flowsGet().items.find((x) => x.id === flowState.openId) || null; }
+  function flowUpdate(fn) { const f = flowsGet(); const fl = f.items.find((x) => x.id === flowState.openId); if (!fl) return; fn(fl); fl.updatedAt = Date.now(); flowsSave(f); }
+  window._flNew = () => {
+    const name = prompt("Nome do fluxograma (ex: Estrutura da Sato, Plano de vida):", "");
+    if (name === null) return;
+    const f = flowsGet(); const id = "fl" + Date.now().toString(36);
+    f.items.unshift({ id, name: (name || "").trim() || "Sem nome", nodes: [{ id: "n1", x: 800, y: 560, text: "In\xEDcio", color: "#7C83FF" }], edges: [], updatedAt: Date.now() });
+    flowsSave(f);
+    flowState.openId = id; flowState.sel = "n1"; flowState.linkFrom = null;
+    window._agTab("fluxos");
+  };
+  window._flOpen = (id) => { flowState.openId = id; flowState.sel = null; flowState.linkFrom = null; window._agTab("fluxos"); };
+  window._flBack = () => { flowState.openId = null; flowState.sel = null; flowState.linkFrom = null; window._agTab("fluxos"); };
+  window._flDelete = (id) => {
+    const f = flowsGet(); const fl = f.items.find((x) => x.id === id);
+    if (!fl || !confirm(`Excluir o fluxograma "${fl.name}"?`)) return;
+    f.items = f.items.filter((x) => x.id !== id); flowsSave(f);
+    if (flowState.openId === id) flowState.openId = null;
+    window._agTab("fluxos");
+  };
+  function renderFlows(content) {
+    const fl = flowCur();
+    if (!fl) { renderFlowList(content); return; }
+    renderFlowEditor(content, fl);
+  }
+  function renderFlowList(content) {
+    const f = flowsGet();
+    if (!f.items.length) {
+      content.innerHTML = `<div class="empty-state"><div class="empty-icon">\u{1F9E9}</div>Desenhe os mapas da sua vida: a estrutura da sua empresa,<br>o caminho de um sonho, seu plano de vida.<br><br><button class="btn btn-primary" onclick="window._flNew()">+ Criar o primeiro fluxograma</button></div>`;
+      return;
+    }
+    content.innerHTML = f.items.map((x) => `
+      <div class="flow-card" onclick="window._flOpen('${x.id}')">
+        <span style="font-size:22px">\u{1F9E9}</span>
+        <div style="flex:1;min-width:0">
+          <div class="flow-card-name">${esc(x.name)}</div>
+          <div class="flow-card-meta">${x.nodes.length} etapa(s) \xB7 ${x.edges.length} conex\xE3o(\xF5es) \xB7 ${new Date(x.updatedAt).toLocaleDateString("pt-BR")}</div>
+        </div>
+        <button class="task-delete" style="opacity:.6" onclick="event.stopPropagation();window._flDelete('${x.id}')">\u{1F5D1}</button>
+      </div>`).join("");
+  }
+  function renderFlowEditor(content, fl) {
+    flowLive = JSON.parse(JSON.stringify(fl));
+    content.innerHTML = `
+      <div class="flow-toolbar">
+        <button class="btn btn-ghost btn-sm" onclick="window._flBack()">← Voltar</button>
+        <input id="fl-name" value="${esc(fl.name)}" onchange="window._flRename(this.value)">
+        <button class="btn btn-primary btn-sm" onclick="window._flAddNode()">+ Etapa</button>
+      </div>
+      <div class="flow-wrap" id="fl-wrap"><div class="flow-board" id="fl-board"><svg id="fl-svg"></svg></div></div>
+      <div id="fl-editbar"></div>
+      <div class="flow-hint">Toque numa etapa para editar \xB7 arraste para mover \xB7 \u{1F517} conecta duas etapas \xB7 toque numa linha para remover a conex\xE3o.</div>`;
+    const board = document.getElementById("fl-board");
+    board.addEventListener("pointerdown", (ev) => {
+      if (ev.target === board || ev.target.id === "fl-svg") {
+        if (flowState.sel) { flowState.sel = null; refreshFlow(); }
+      }
+    });
+    drawFlow(board);
+    renderFlowEditbar();
+    const wrap = document.getElementById("fl-wrap");
+    requestAnimationFrame(() => {
+      const xs = flowLive.nodes.map((n) => n.x), ys = flowLive.nodes.map((n) => n.y);
+      const cx = xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : 800;
+      const cy = ys.length ? (Math.min(...ys) + Math.max(...ys)) / 2 : 560;
+      wrap.scrollLeft = cx - wrap.clientWidth / 2; wrap.scrollTop = cy - wrap.clientHeight / 2;
+    });
+  }
+  function refreshFlow() {
+    const board = document.getElementById("fl-board");
+    const fl = flowCur();
+    if (!board || !fl) { const c = document.getElementById("ag-content"); if (c) renderFlows(c); return; }
+    flowLive = JSON.parse(JSON.stringify(fl));
+    drawFlow(board);
+    renderFlowEditbar();
+  }
+  function drawFlow(board) {
+    board.querySelectorAll(".flow-node").forEach((n) => n.remove());
+    drawFlowEdges();
+    flowLive.nodes.forEach((n) => board.appendChild(makeFlowNode(n, board)));
+  }
+  function drawFlowEdges() {
+    const svg = document.getElementById("fl-svg"); if (!svg) return;
+    const by = {}; flowLive.nodes.forEach((n) => by[n.id] = n);
+    let html = '<defs><marker id="fl-arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8A90A6"/></marker></defs>';
+    flowLive.edges.forEach((e, i) => {
+      const a = by[e.a], b = by[e.b]; if (!a || !b) return;
+      let dx = b.x - a.x, dy = b.y - a.y; const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const off = Math.min(52, d * 0.35);
+      const x1 = a.x + dx / d * off, y1 = a.y + dy / d * off;
+      const x2 = b.x - dx / d * off, y2 = b.y - dy / d * off;
+      html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#8A90A6" stroke-width="2.5" marker-end="url(#fl-arr)"/>`;
+      html += `<line data-ei="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="24" style="pointer-events:stroke;cursor:pointer"/>`;
+    });
+    svg.innerHTML = html;
+    svg.querySelectorAll("line[data-ei]").forEach((ln) => {
+      ln.addEventListener("pointerup", (ev) => {
+        ev.stopPropagation();
+        const i = +ln.dataset.ei;
+        if (confirm("Remover esta conex\xE3o?")) { flowUpdate((fl) => { fl.edges.splice(i, 1); }); refreshFlow(); }
+      });
+    });
+  }
+  function makeFlowNode(n, board) {
+    const el = document.createElement("div");
+    el.className = "flow-node" + (flowState.sel === n.id ? " sel" : "") + (flowState.linkFrom === n.id ? " linking" : "");
+    el.dataset.nid = n.id;
+    el.style.left = n.x + "px"; el.style.top = n.y + "px";
+    el.style.borderColor = n.color || "#7C83FF";
+    el.textContent = n.text || "…";
+    let moved = false, dragging = false, offX = 0, offY = 0;
+    el.onpointerdown = (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      moved = false; dragging = true;
+      const br = board.getBoundingClientRect();
+      offX = ev.clientX - br.left - n.x; offY = ev.clientY - br.top - n.y;
+      try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+      el.style.zIndex = 5;
+    };
+    el.onpointermove = (ev) => {
+      if (!dragging) return;
+      const br = board.getBoundingClientRect();
+      const nx = Math.max(40, Math.min(1560, ev.clientX - br.left - offX));
+      const ny = Math.max(30, Math.min(1170, ev.clientY - br.top - offY));
+      if (Math.abs(nx - n.x) > 4 || Math.abs(ny - n.y) > 4) moved = true;
+      n.x = nx; n.y = ny;
+      el.style.left = nx + "px"; el.style.top = ny + "px";
+      drawFlowEdges();
+    };
+    el.onpointercancel = () => { dragging = false; el.style.zIndex = ""; };
+    el.onpointerup = (ev) => {
+      dragging = false;
+      try { el.releasePointerCapture(ev.pointerId); } catch (e) {}
+      el.style.zIndex = "";
+      if (moved) { flowUpdate((fl) => { const m = fl.nodes.find((z) => z.id === n.id); if (m) { m.x = Math.round(n.x); m.y = Math.round(n.y); } }); return; }
+      if (flowState.linkFrom && flowState.linkFrom !== n.id) {
+        const from = flowState.linkFrom; flowState.linkFrom = null;
+        flowUpdate((fl) => { if (!fl.edges.some((e) => e.a === from && e.b === n.id || e.a === n.id && e.b === from)) fl.edges.push({ a: from, b: n.id }); });
+        flowState.sel = n.id; refreshFlow(); return;
+      }
+      flowState.sel = n.id;
+      flowState.linkFrom = null;
+      refreshFlow();
+    };
+    return el;
+  }
+  function renderFlowEditbar() {
+    const bar = document.getElementById("fl-editbar"); if (!bar) return;
+    if (flowState.linkFrom) {
+      bar.innerHTML = `<div class="flow-editbar"><span style="font-size:13px;color:var(--gold);font-weight:600">\u{1F517} Agora toque na etapa de destino…</span><button class="btn btn-ghost btn-sm" onclick="window._flCancelLink()">Cancelar</button></div>`;
+      return;
+    }
+    const n = flowLive && flowLive.nodes.find((x) => x.id === flowState.sel);
+    if (!n) { bar.innerHTML = ""; return; }
+    bar.innerHTML = `<div class="flow-editbar">
+      <input type="text" id="fl-node-text" value="${esc(n.text || "")}" placeholder="Texto da etapa" oninput="window._flText(this.value)">
+      ${FLOW_COLORS.map((c) => `<button class="flow-swatch ${n.color === c ? "on" : ""}" style="background:${c}" onclick="window._flColor('${c}')"></button>`).join("")}
+      <button class="btn btn-ghost btn-sm" onclick="window._flLink()">\u{1F517} Conectar</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:var(--red)" onclick="window._flDelNode()">\u{1F5D1} Excluir</button>
+    </div>`;
+  }
+  window._flRename = (v) => flowUpdate((fl) => { fl.name = (v || "").trim() || "Sem nome"; });
+  window._flAddNode = () => {
+    const wrap = document.getElementById("fl-wrap");
+    const cx = wrap ? Math.round(wrap.scrollLeft + wrap.clientWidth / 2) : 800;
+    const cy = wrap ? Math.round(wrap.scrollTop + wrap.clientHeight / 2) : 560;
+    const id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    flowUpdate((fl) => fl.nodes.push({ id, x: cx, y: cy, text: "Nova etapa", color: "#7C83FF" }));
+    flowState.sel = id; flowState.linkFrom = null; refreshFlow();
+    setTimeout(() => { const inp = document.getElementById("fl-node-text"); if (inp) { inp.focus(); inp.select(); } }, 60);
+  };
+  window._flText = (v) => {
+    flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === flowState.sel); if (n) n.text = v; });
+    if (flowLive) { const n = flowLive.nodes.find((x) => x.id === flowState.sel); if (n) n.text = v; }
+    const el = document.querySelector(`.flow-node[data-nid="${flowState.sel}"]`);
+    if (el) el.textContent = v || "…";
+  };
+  window._flColor = (c) => { flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === flowState.sel); if (n) n.color = c; }); refreshFlow(); };
+  window._flLink = () => { flowState.linkFrom = flowState.sel; flowState.sel = null; refreshFlow(); };
+  window._flCancelLink = () => { flowState.linkFrom = null; refreshFlow(); };
+  window._flDelNode = () => {
+    const id = flowState.sel; if (!id) return;
+    flowUpdate((fl) => { fl.nodes = fl.nodes.filter((n) => n.id !== id); fl.edges = fl.edges.filter((e) => e.a !== id && e.b !== id); });
+    flowState.sel = null; refreshFlow();
+  };
   function renderRoutine() {
     const ag = storage_default.get("agenda") || {};
     const routine = ag.routine || { days: ["Seg", "Ter", "Qua", "Qui", "Sex", "S\xE1b", "Dom"], slots: [] };
@@ -5786,7 +6002,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     url: "https://esuvnbgxoktjjutmwwhs.supabase.co",
     key: "sb_publishable_BvVKOAzUthKxk4mNvHum9A_7cDu7Lcr"
   };
-  var DATA_KEYS = ["rpg_char", "rpg_tasks", "rpg_notes", "rpg_obj", "rpg_insights", "rpg_fin", "rpg_events", "rpg_rewards", "rpg_shop", "rpg_lib", "rpg_habits", "rpg_settings", "rpg_crm", "rpg_agenda", "rpg_timeline", "rpg_daymoods", "rpg_spiritual", "rpg_meals", "rpg_shopcats"];
+  var DATA_KEYS = ["rpg_char", "rpg_tasks", "rpg_notes", "rpg_obj", "rpg_insights", "rpg_fin", "rpg_events", "rpg_rewards", "rpg_shop", "rpg_lib", "rpg_habits", "rpg_settings", "rpg_crm", "rpg_agenda", "rpg_timeline", "rpg_daymoods", "rpg_spiritual", "rpg_meals", "rpg_shopcats", "rpg_flows"];
   function getSyncCfg() {
     try {
       return { ...DEFAULT_CFG, ...JSON.parse(localStorage.getItem(CFG_KEY) || "{}") };
