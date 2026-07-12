@@ -522,6 +522,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .flow-node.root { font-family:var(--font-display); font-size:18px; font-weight:800; border-bottom-width:4px; max-width:260px; white-space:normal; min-width:150px; }
 .flow-node.sel { background:color-mix(in srgb, var(--primary) 12%, transparent); box-shadow:0 0 0 2px rgba(124,131,255,.35); }
 .flow-node.linking { background:rgba(255,122,107,.14); box-shadow:0 0 0 2px rgba(255,122,107,.5); }
+.flow-toggle { position:absolute; right:-32px; top:50%; transform:translateY(-50%); width:25px; height:25px; border-radius:50%; background:var(--surface); border:2.5px solid var(--primary); color:var(--text); font-size:13px; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; box-shadow:var(--shadow-sm); z-index:3; }
+.flow-toggle.closed { color:#fff; }
 .flow-editbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:11px 13px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); }
 .flow-editbar input[type="text"] { flex:1; min-width:140px; }
 .flow-swatch { width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex:0 0 auto; padding:0; }
@@ -2061,7 +2063,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       </div>
       <div class="flow-wrap" id="fl-wrap"><div class="flow-board" id="fl-board"><svg id="fl-svg"></svg></div></div>
       <div id="fl-editbar"></div>
-      <div class="flow-hint">Toque numa etapa para editar \xB7 arraste para mover \xB7 \u{1F517} conecta duas etapas \xB7 toque numa linha para remover a conex\xE3o.</div>`;
+      <div class="flow-hint">Toque numa etapa para editar \xB7 arraste para mover \xB7 \u{1F517} conecta duas etapas \xB7 toque numa linha para remover a conex\xE3o \xB7 o c\xEDrculo ⊖ recolhe/expande o ramo.</div>`;
     const board = document.getElementById("fl-board");
     board.addEventListener("pointerdown", (ev) => {
       if (ev.target === board || ev.target.id === "fl-svg") {
@@ -2086,9 +2088,21 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     drawFlow(board);
     renderFlowEditbar();
   }
+  function flowChildren(fl, id) { return fl.edges.filter((e) => e.a === id).map((e) => e.b); }
+  function flowDescIds(fl, id) {
+    const out = new Set(); const seen = new Set([id]); const stack = [...flowChildren(fl, id)];
+    while (stack.length) { const x = stack.pop(); if (seen.has(x)) continue; seen.add(x); out.add(x); flowChildren(fl, x).forEach((c) => stack.push(c)); }
+    return out;
+  }
+  function flowHiddenSet(fl) {
+    const hidden = new Set();
+    fl.nodes.forEach((n) => { if (n.collapsed) flowDescIds(fl, n.id).forEach((x) => hidden.add(x)); });
+    return hidden;
+  }
   function drawFlow(board) {
     board.querySelectorAll(".flow-node").forEach((n) => n.remove());
-    flowLive.nodes.forEach((n) => board.appendChild(makeFlowNode(n, board)));
+    const hidden = flowHiddenSet(flowLive);
+    flowLive.nodes.forEach((n) => { if (!hidden.has(n.id)) board.appendChild(makeFlowNode(n, board)); });
     drawFlowEdges();
   }
   function drawFlowEdges() {
@@ -2098,9 +2112,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     // mede a largura/altura real de cada rótulo pra ancorar a curva na borda do texto
     const dim = {};
     board.querySelectorAll(".flow-node").forEach((el) => { dim[el.dataset.nid] = { w: el.offsetWidth, h: el.offsetHeight }; });
+    const hidden = flowHiddenSet(flowLive);
     let html = "";
     flowLive.edges.forEach((e, i) => {
       const a = by[e.a], b = by[e.b]; if (!a || !b) return;
+      if (hidden.has(e.a) || hidden.has(e.b)) return;
       const da = dim[e.a] || { w: 110, h: 34 }, db = dim[e.b] || { w: 110, h: 34 };
       const dir = b.x >= a.x ? 1 : -1;
       const x1 = a.x + dir * (da.w / 2 - 4), y1 = a.y + da.h / 2 - 2;
@@ -2128,7 +2144,22 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     el.dataset.nid = n.id;
     el.style.left = n.x + "px"; el.style.top = n.y + "px";
     el.style.borderColor = n.color || "#7C83FF";
-    el.textContent = n.text || "…";
+    const txt = document.createElement("span");
+    txt.className = "fl-txt"; txt.textContent = n.text || "…";
+    el.appendChild(txt);
+    // círculo de recolher/expandir (só em células com filhos)
+    if (flowChildren(flowLive, n.id).length) {
+      const tg = document.createElement("span");
+      tg.className = "flow-toggle" + (n.collapsed ? " closed" : "");
+      tg.textContent = n.collapsed ? String(flowDescIds(flowLive, n.id).size) : "−";
+      tg.style.borderColor = n.color || "#7C83FF";
+      if (n.collapsed) tg.style.background = n.color || "#7C83FF";
+      tg.title = n.collapsed ? "Expandir ramo" : "Recolher ramo";
+      tg.onpointerdown = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      tg.onpointerup = (ev) => { ev.stopPropagation(); window._flToggle(n.id); };
+      tg.onclick = (ev) => ev.stopPropagation();
+      el.appendChild(tg);
+    }
     let moved = false, dragging = false, offX = 0, offY = 0;
     el.onpointerdown = (ev) => {
       ev.preventDefault(); ev.stopPropagation();
@@ -2193,8 +2224,18 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   window._flText = (v) => {
     flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === flowState.sel); if (n) n.text = v; });
     if (flowLive) { const n = flowLive.nodes.find((x) => x.id === flowState.sel); if (n) n.text = v; }
-    const el = document.querySelector(`.flow-node[data-nid="${flowState.sel}"]`);
+    const el = document.querySelector(`.flow-node[data-nid="${flowState.sel}"] .fl-txt`);
     if (el) { el.textContent = v || "…"; drawFlowEdges(); }
+  };
+  window._flToggle = (id) => {
+    flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === id); if (n) n.collapsed = !n.collapsed; });
+    const fl2 = flowCur();
+    if (fl2) {
+      const hid = flowHiddenSet(fl2);
+      if (flowState.sel && hid.has(flowState.sel)) flowState.sel = null;
+      if (flowState.linkFrom && hid.has(flowState.linkFrom)) flowState.linkFrom = null;
+    }
+    refreshFlow();
   };
   window._flColor = (c) => { flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === flowState.sel); if (n) n.color = c; }); refreshFlow(); };
   window._flLink = () => { flowState.linkFrom = flowState.sel; flowState.sel = null; refreshFlow(); };
