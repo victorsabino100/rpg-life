@@ -1714,7 +1714,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   // ===== Integração Google Calendar (GIS token flow + REST v3) =====
   var gcalToken = null, gcalTokenClient = null, gcalExpiry = 0;
   var gcalCache = {}, gcalGranted = false, gcalPending = null;
-  function gcalCid() { return ((storage_default.get("settings") || {}).googleClientId || "").trim(); }
+  var GCAL_DEFAULT_CID = "555728251407-v4vhg73ktqh2dmshapkh9smdfqi49vqi.apps.googleusercontent.com";
+  function gcalCid() { return (((storage_default.get("settings") || {}).googleClientId || GCAL_DEFAULT_CID) || "").trim(); }
   function gcalReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
   function gcalConnected() { return !!gcalToken && Date.now() < gcalExpiry; }
   function gcalMonthKey(y, m) { return y + "-" + String(m + 1).padStart(2, "0"); }
@@ -6348,7 +6349,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="form-group"><label>Nome de Aventureiro</label><input id="set-name" value="${char.name}"></div>
     <div class="form-group">
       <label>\u{1F5D3} Google Calendar</label>
-      <input id="set-gcal" value="${settings.googleClientId || ""}" placeholder="xxxx.apps.googleusercontent.com">
+      <input id="set-gcal" value="${settings.googleClientId || GCAL_DEFAULT_CID}" placeholder="xxxx.apps.googleusercontent.com">
       <small style="color:var(--muted);font-size:11px">Client ID OAuth \u2014 crie em console.cloud.google.com \u2192 APIs e Servi\xE7os \u2192 Credenciais \u2192 ID do cliente OAuth (tipo: Aplicativo da Web). Em \u201COrigens JavaScript autorizadas\u201D adicione <b>https://rpg.satomarketing.com.br</b></small>
       <div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="window._gcalConnectFromSettings()">\u{1F517} Conectar</button>
