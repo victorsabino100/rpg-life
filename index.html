@@ -518,9 +518,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .flow-wrap { position:relative; overflow:auto; height:calc(100dvh - 320px); min-height:380px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); -webkit-overflow-scrolling:touch; }
 .flow-board { position:relative; width:1600px; height:1200px; background-image:radial-gradient(circle, var(--border) 1px, transparent 1px); background-size:28px 28px; }
 .flow-board svg { position:absolute; inset:0; width:100%; height:100%; }
-.flow-node { position:absolute; min-width:90px; max-width:180px; padding:10px 13px; background:var(--surface); border:1.8px solid var(--primary); border-radius:13px; font-size:13px; font-weight:600; color:var(--text); text-align:center; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; box-shadow:var(--shadow-sm); transform:translate(-50%,-50%); word-break:break-word; line-height:1.35; }
-.flow-node.sel { box-shadow:0 0 0 3px rgba(124,131,255,.35), var(--shadow-md); }
-.flow-node.linking { box-shadow:0 0 0 3px rgba(255,122,107,.45), var(--shadow-md); }
+.flow-node { position:absolute; max-width:210px; padding:5px 12px 8px; background:transparent; border:none; border-bottom:3px solid var(--primary); border-radius:6px; font-size:14.5px; font-weight:600; color:var(--text); text-align:center; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; transform:translate(-50%,-50%); word-break:break-word; line-height:1.35; white-space:nowrap; }
+.flow-node.root { font-family:var(--font-display); font-size:18px; font-weight:800; border-bottom-width:4px; max-width:260px; white-space:normal; min-width:150px; }
+.flow-node.sel { background:color-mix(in srgb, var(--primary) 12%, transparent); box-shadow:0 0 0 2px rgba(124,131,255,.35); }
+.flow-node.linking { background:rgba(255,122,107,.14); box-shadow:0 0 0 2px rgba(255,122,107,.5); }
 .flow-editbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:11px 13px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); }
 .flow-editbar input[type="text"] { flex:1; min-width:140px; }
 .flow-swatch { width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex:0 0 auto; padding:0; }
@@ -2014,7 +2015,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const name = prompt("Nome do fluxograma (ex: Estrutura da Sato, Plano de vida):", "");
     if (name === null) return;
     const f = flowsGet(); const id = "fl" + Date.now().toString(36);
-    f.items.unshift({ id, name: (name || "").trim() || "Sem nome", nodes: [{ id: "n1", x: 800, y: 560, text: "In\xEDcio", color: "#7C83FF" }], edges: [], updatedAt: Date.now() });
+    const rootText = (name || "").trim() || "Sem nome";
+    f.items.unshift({ id, name: rootText, nodes: [{ id: "n1", x: 800, y: 560, text: rootText, color: "#8A90A6" }], edges: [], updatedAt: Date.now() });
     flowsSave(f);
     flowState.openId = id; flowState.sel = "n1"; flowState.linkFrom = null;
     window._agTab("fluxos");
@@ -2047,7 +2049,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <div class="flow-card-meta">${x.nodes.length} etapa(s) \xB7 ${x.edges.length} conex\xE3o(\xF5es) \xB7 ${new Date(x.updatedAt).toLocaleDateString("pt-BR")}</div>
         </div>
         <button class="task-delete" style="opacity:.6" onclick="event.stopPropagation();window._flDelete('${x.id}')">\u{1F5D1}</button>
-      </div>`).join("");
+      </div>`).join("") + `<button class="crm-add-card" style="margin-top:6px;padding:13px" onclick="window._flNew()">+ Novo fluxograma</button>`;
   }
   function renderFlowEditor(content, fl) {
     flowLive = JSON.parse(JSON.stringify(fl));
@@ -2086,24 +2088,32 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   function drawFlow(board) {
     board.querySelectorAll(".flow-node").forEach((n) => n.remove());
-    drawFlowEdges();
     flowLive.nodes.forEach((n) => board.appendChild(makeFlowNode(n, board)));
+    drawFlowEdges();
   }
   function drawFlowEdges() {
     const svg = document.getElementById("fl-svg"); if (!svg) return;
+    const board = svg.parentElement;
     const by = {}; flowLive.nodes.forEach((n) => by[n.id] = n);
-    let html = '<defs><marker id="fl-arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8A90A6"/></marker></defs>';
+    // mede a largura/altura real de cada rótulo pra ancorar a curva na borda do texto
+    const dim = {};
+    board.querySelectorAll(".flow-node").forEach((el) => { dim[el.dataset.nid] = { w: el.offsetWidth, h: el.offsetHeight }; });
+    let html = "";
     flowLive.edges.forEach((e, i) => {
       const a = by[e.a], b = by[e.b]; if (!a || !b) return;
-      let dx = b.x - a.x, dy = b.y - a.y; const d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const off = Math.min(52, d * 0.35);
-      const x1 = a.x + dx / d * off, y1 = a.y + dy / d * off;
-      const x2 = b.x - dx / d * off, y2 = b.y - dy / d * off;
-      html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#8A90A6" stroke-width="2.5" marker-end="url(#fl-arr)"/>`;
-      html += `<line data-ei="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="24" style="pointer-events:stroke;cursor:pointer"/>`;
+      const da = dim[e.a] || { w: 110, h: 34 }, db = dim[e.b] || { w: 110, h: 34 };
+      const dir = b.x >= a.x ? 1 : -1;
+      const x1 = a.x + dir * (da.w / 2 - 4), y1 = a.y + da.h / 2 - 2;
+      const x2 = b.x - dir * (db.w / 2 - 4), y2 = b.y + db.h / 2 - 2;
+      const mx = (x1 + x2) / 2;
+      const dPath = `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+      const col = b.color || "#7C83FF";
+      html += `<path d="${dPath}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round"/>`;
+      html += `<circle cx="${x2}" cy="${y2}" r="4.5" fill="var(--surface2)" stroke="${col}" stroke-width="2.5"/>`;
+      html += `<path data-ei="${i}" d="${dPath}" fill="none" stroke="transparent" stroke-width="26" style="pointer-events:stroke;cursor:pointer"/>`;
     });
     svg.innerHTML = html;
-    svg.querySelectorAll("line[data-ei]").forEach((ln) => {
+    svg.querySelectorAll("path[data-ei]").forEach((ln) => {
       ln.addEventListener("pointerup", (ev) => {
         ev.stopPropagation();
         const i = +ln.dataset.ei;
@@ -2113,7 +2123,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   function makeFlowNode(n, board) {
     const el = document.createElement("div");
-    el.className = "flow-node" + (flowState.sel === n.id ? " sel" : "") + (flowState.linkFrom === n.id ? " linking" : "");
+    const isRoot = flowLive.nodes[0] && flowLive.nodes[0].id === n.id;
+    el.className = "flow-node" + (isRoot ? " root" : "") + (flowState.sel === n.id ? " sel" : "") + (flowState.linkFrom === n.id ? " linking" : "");
     el.dataset.nid = n.id;
     el.style.left = n.x + "px"; el.style.top = n.y + "px";
     el.style.borderColor = n.color || "#7C83FF";
@@ -2175,7 +2186,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const cx = wrap ? Math.round(wrap.scrollLeft + wrap.clientWidth / 2) : 800;
     const cy = wrap ? Math.round(wrap.scrollTop + wrap.clientHeight / 2) : 560;
     const id = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    flowUpdate((fl) => fl.nodes.push({ id, x: cx, y: cy, text: "Nova etapa", color: "#7C83FF" }));
+    flowUpdate((fl) => fl.nodes.push({ id, x: cx, y: cy, text: "Nova etapa", color: FLOW_COLORS[(fl.nodes.length - 1) % 6] }));
     flowState.sel = id; flowState.linkFrom = null; refreshFlow();
     setTimeout(() => { const inp = document.getElementById("fl-node-text"); if (inp) { inp.focus(); inp.select(); } }, 60);
   };
@@ -2183,7 +2194,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === flowState.sel); if (n) n.text = v; });
     if (flowLive) { const n = flowLive.nodes.find((x) => x.id === flowState.sel); if (n) n.text = v; }
     const el = document.querySelector(`.flow-node[data-nid="${flowState.sel}"]`);
-    if (el) el.textContent = v || "…";
+    if (el) { el.textContent = v || "…"; drawFlowEdges(); }
   };
   window._flColor = (c) => { flowUpdate((fl) => { const n = fl.nodes.find((x) => x.id === flowState.sel); if (n) n.color = c; }); refreshFlow(); };
   window._flLink = () => { flowState.linkFrom = flowState.sel; flowState.sel = null; refreshFlow(); };
