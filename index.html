@@ -505,7 +505,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .knowledge-textarea { flex:1; font-family:var(--font-body); font-size:15px; line-height:1.7; min-height:200px; }
 .knowledge-rendered { flex:1; min-height:200px; line-height:1.75; font-size:14px; overflow-y:auto; padding:8px; }
 .knowledge-rendered .wiki-link { color:var(--primary-d); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
-#knowledge-graph-canvas { width:100%; height:220px; border-radius:var(--r); background:var(--surface2); border:1px solid var(--border); margin-top:12px; display:block; }
+#knowledge-graph-canvas { width:100%; height:220px; border-radius:var(--r); background:var(--surface2); border:1px solid var(--border); margin-top:12px; display:block; touch-action:none; -webkit-tap-highlight-color:transparent; }
 .kn-graph-big { height:calc(100vh - 260px) !important; min-height:420px; margin-top:0 !important; cursor:pointer; }
 .backlinks { margin-top:16px; }
 .backlinks-title { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-bottom:8px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
@@ -3252,13 +3252,16 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     }
     const nb = {}; nodes.forEach((n) => nb[n.id] = new Set());
     links.forEach((l) => { nb[l.a].add(l.b); nb[l.b].add(l.a); });
-    let hover = null, drag = null, moved = false;
+    let hover = null, drag = null, moved = false, downXY = null;
     const posOf = (ev) => { const r = canvas.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
-    const pick = (mx, my) => { let best = null, bd = 400; nodes.forEach((n) => { const d = (n.x - mx) ** 2 + (n.y - my) ** 2; if (d < bd) { bd = d; best = n; } }); return best; };
-    canvas.onmousemove = (ev) => { const [mx, my] = posOf(ev); if (drag) { drag.x = mx; drag.y = my; drag.vx = 0; drag.vy = 0; moved = true; } else { const p = pick(mx, my); hover = p ? p.id : null; canvas.style.cursor = p ? "pointer" : "grab"; } };
-    canvas.onmousedown = (ev) => { const [mx, my] = posOf(ev); drag = pick(mx, my); moved = false; };
-    canvas.onmouseup = () => { if (drag && !moved) { const nid = drag.id; drag = null; window._graphNotePopup(nid); return; } drag = null; };
-    canvas.onmouseleave = () => { hover = null; drag = null; };
+    // raio de captura maior no toque (dedo é menos preciso que o cursor)
+    const pick = (mx, my, touch) => { let best = null, bd = touch ? 1600 : 400; nodes.forEach((n) => { const d = (n.x - mx) ** 2 + (n.y - my) ** 2; if (d < bd) { bd = d; best = n; } }); return best; };
+    // Pointer Events: mouse + toque + caneta num só caminho
+    canvas.onpointermove = (ev) => { const [mx, my] = posOf(ev); if (drag) { ev.preventDefault(); drag.x = mx; drag.y = my; drag.vx = 0; drag.vy = 0; if (downXY && (Math.abs(mx - downXY[0]) > 6 || Math.abs(my - downXY[1]) > 6)) moved = true; } else if (ev.pointerType === "mouse") { const p = pick(mx, my, false); hover = p ? p.id : null; canvas.style.cursor = p ? "pointer" : "grab"; } };
+    canvas.onpointerdown = (ev) => { ev.preventDefault(); const [mx, my] = posOf(ev); drag = pick(mx, my, ev.pointerType !== "mouse"); moved = false; downXY = [mx, my]; if (drag) { hover = drag.id; try { canvas.setPointerCapture(ev.pointerId); } catch (e) {} } };
+    canvas.onpointerup = (ev) => { try { canvas.releasePointerCapture(ev.pointerId); } catch (e) {} if (drag && !moved) { const nid = drag.id; drag = null; window._graphNotePopup(nid); return; } drag = null; };
+    canvas.onpointercancel = () => { drag = null; };
+    canvas.onmouseleave = () => { hover = null; };
     canvas.onclick = null;
     function step() {
       for (let i = 0; i < nodes.length; i++) { const a = nodes[i]; for (let j = i + 1; j < nodes.length; j++) { const b = nodes[j]; let dx = a.x - b.x, dy = a.y - b.y; let d2 = dx * dx + dy * dy || 0.01; let d = Math.sqrt(d2); const rep = 3000 / d2; const fx = dx / d * rep, fy = dy / d * rep; a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy; } }
