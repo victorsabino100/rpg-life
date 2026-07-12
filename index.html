@@ -6376,8 +6376,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="form-group"><label>URL do Supabase</label><input id="sync-url" value="${sync.url || ""}" placeholder="https://xxxx.supabase.co"></div>
     <div class="form-group"><label>Chave p\xFAblica (anon)</label><input id="sync-key" value="${sync.key || ""}" placeholder="eyJ..."></div>
     <div class="form-group"><label>\u{1F511} C\xF3digo de sincroniza\xE7\xE3o</label><input id="sync-code" value="${sync.code || ""}" placeholder="invente um c\xF3digo secreto, ex: victor-2026"></div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px">
-      <input type="checkbox" id="sync-auto" ${sync.auto !== false ? "checked" : ""}> Sincronizar automaticamente
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer">
+      <input type="checkbox" id="sync-auto" style="width:16px;height:16px;flex:0 0 auto;margin:0;cursor:pointer" ${sync.auto !== false ? "checked" : ""}> <span>Sincronizar automaticamente</span>
     </label>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="window._syncTest()">\u{1F50C} Testar conex\xE3o</button>
