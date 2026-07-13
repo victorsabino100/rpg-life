@@ -1228,10 +1228,19 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function areaOptions(sel) {
     return Object.entries(ATTRS).map(([k, a]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${a.name}</option>`).join("");
   }
-  // remove da Linha do Tempo os registros ligados a um item (por nome)
+  // Linha do Tempo: casa registros ligados a um item (por nome)
+  function _tlMatch(x, nm) { return x.endsWith(": " + nm) || x.startsWith(nm + ":") || x === nm; }
+  function timelineHas(name) {
+    const nm = (name || "").trim(); if (nm.length < 2) return false;
+    return (storage_default.get("timeline") || []).some((r) => _tlMatch(r.text || "", nm));
+  }
   function removeTimelineByName(name) {
     const nm = (name || "").trim(); if (nm.length < 2) return;
-    storage_default.update("timeline", (t) => (t || []).filter((r) => { const x = r.text || ""; return !(x.endsWith(": " + nm) || x.startsWith(nm + ":") || x === nm); }));
+    storage_default.update("timeline", (t) => (t || []).filter((r) => !_tlMatch(r.text || "", nm)));
+  }
+  // Pergunta (só se houver registro) se deve remover da Linha do Tempo
+  function askRemoveTimeline(name) {
+    if (timelineHas(name) && confirm(`"${name}" tem registro na Linha do Tempo. Deseja remover de l\xE1 tamb\xE9m?`)) removeTimelineByName(name);
   }
   function askDelete(label, earnedXP, area) {
     if (!confirm(`Deseja mesmo excluir "${label}"?`)) return false;
@@ -1241,7 +1250,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         addXP(-earnedXP, ATTRS[area] ? area : "mente");
       }
     }
-    removeTimelineByName(label);
+    askRemoveTimeline(label);
     return true;
   }
   function tlIcon(rec) {
@@ -2728,7 +2737,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (confirm(`Este item j\xE1 tinha gerado 10 XP e \u{1FA99}5. Deseja remover esses pontos tamb\xE9m?`)) {
             addXP(-10, "mente");
           }
-          removeTimelineByName(item.text);
+          askRemoveTimeline(item.text);
         }
         renderPanels();
       };
