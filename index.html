@@ -2088,10 +2088,27 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     drawFlow(board);
     renderFlowEditbar();
   }
-  function flowChildren(fl, id) { return fl.edges.filter((e) => e.a === id).map((e) => e.b); }
+  // Hierarquia calculada A PARTIR DA ORIGEM (nó central = nodes[0]):
+  // conexões são tratadas como não-direcionadas; "filho" = vizinho mais distante
+  // da origem. Assim cada célula só recolhe o que vem DEPOIS dela, nunca a que a gerou.
+  function flowTree(fl) {
+    const adj = {}; fl.nodes.forEach((n) => adj[n.id] = []);
+    fl.edges.forEach((e) => { if (adj[e.a] && adj[e.b]) { adj[e.a].push(e.b); adj[e.b].push(e.a); } });
+    const childrenMap = {}; fl.nodes.forEach((n) => childrenMap[n.id] = []);
+    const visited = new Set();
+    const order = fl.nodes.map((n) => n.id); // nodes[0] (origem) primeiro
+    order.forEach((rootId) => {
+      if (visited.has(rootId)) return;
+      visited.add(rootId); const q = [rootId];
+      while (q.length) { const u = q.shift(); (adj[u] || []).forEach((v) => { if (!visited.has(v)) { visited.add(v); childrenMap[u].push(v); q.push(v); } }); }
+    });
+    return childrenMap;
+  }
+  function flowChildren(fl, id) { return flowTree(fl)[id] || []; }
   function flowDescIds(fl, id) {
-    const out = new Set(); const seen = new Set([id]); const stack = [...flowChildren(fl, id)];
-    while (stack.length) { const x = stack.pop(); if (seen.has(x)) continue; seen.add(x); out.add(x); flowChildren(fl, x).forEach((c) => stack.push(c)); }
+    const cm = flowTree(fl);
+    const out = new Set(); const stack = [...(cm[id] || [])];
+    while (stack.length) { const x = stack.pop(); if (out.has(x)) continue; out.add(x); (cm[x] || []).forEach((c) => stack.push(c)); }
     return out;
   }
   function flowHiddenSet(fl) {
