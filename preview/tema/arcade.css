@@ -1,0 +1,231 @@
+/* ============================================================
+   ARCADE (opção 1c) — camada pop sobre o app RPG Life.
+   Carregar DEPOIS do CSS base. Papel claro, contornos pretos 2px,
+   sombras duras deslocadas, cantos arredondados, Space Grotesk,
+   botões em pílula, barras listradas. Sem emoji.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+:root{
+--bg:#FAF6EE;--surface:#FFFFFF;--surface2:#F0EDE4;--border:#17150F;--border-soft:#E3DFD3;
+--primary:#5A62E8;--primary-l:#8B92FF;--primary-d:#3F47D6;
+--gold:#E0913E;--pink:#FF6B5C;--pink-l:#FF8A76;--green:#17B893;--red:#C7402E;--orange:#E0913E;--blue:#2E7FA8;
+--text:#17150F;--text-2:#17150F99;--muted:#6B665A;--navy:#17150F;
+--ink:#17150F;
+--r-sm:10px;--r:14px;--r-lg:20px;
+--shadow-sm:3px 3px 0 #17150F;--shadow-md:5px 5px 0 #17150F;--shadow-lg:8px 8px 0 #17150F;
+--ring:0 0 0 3px rgba(90,98,232,.25);
+--grad-brand:linear-gradient(120deg,#5A62E8,#FF6B5C); /* @kind color */
+--font-display:'Space Grotesk',system-ui,sans-serif;
+}
+html[data-theme="dark"]{
+--bg:#1C1A16 !important;--surface:#262219;--surface2:#2E2A20;--border:#F0EBDD;--border-soft:#3B362B;
+--primary:#8B92FF !important;--primary-l:#AEB3FF !important;--primary-d:#7A81F2;
+--gold:#FFC24B !important;--pink:#FF8A76;--pink-l:#FFA694;--green:#3ED9B0;--red:#F2705C;--orange:#E7B15A;--blue:#6FB8DF;
+--text:#F0EBDD;--muted:#B7B0A0;--navy:#F0EBDD;--ink:#F0EBDD;
+--shadow-sm:3px 3px 0 #F0EBDD;--shadow-md:5px 5px 0 #F0EBDD;--shadow-lg:8px 8px 0 #F0EBDD;
+--grad-brand:linear-gradient(120deg,#8B92FF,#FF8A76); /* @kind color */
+}
+body{background-image:none !important;font-size:14.5px;font-family:'Space Grotesk',system-ui,sans-serif}
+h1,h2,h3,h4{font-weight:700 !important;letter-spacing:-.02em}
+.section-header h1{font-size:30px}
+.page-title{background:none;-webkit-text-fill-color:var(--text);font-weight:700 !important;font-size:30px;letter-spacing:-.02em}
+.trilha-greet{font-weight:700;font-size:38px;letter-spacing:-.03em;margin-top:6px;line-height:1.02}
+.msala-name{font-weight:700;font-size:28px}
+.fsc-value,.reward-balance-value,.streak-count,.modal-title,.char-class-name,.book-title,.crm-col-title,.journey-col-headtitle,.dash-day-head,.levelup-title{font-weight:700 !important}
+
+/* ---------- botões: pílula, contorno preto, sombra dura ---------- */
+.btn,.btn-now,#undo-btn,.rv-idea-row button,.levelup-card button,.fin-tab,.lib-tab,.shop-filter{border-radius:99px !important;border:2px solid var(--ink);font-weight:700}
+.btn{box-shadow:var(--shadow-sm);transition:transform .1s ease,box-shadow .1s ease}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow-md)}
+.btn:active{transform:translate(2px,2px);box-shadow:none}
+.btn-primary{background:var(--pink);color:#fff;border-color:var(--ink)}
+.btn-primary:hover{background:#FF7D6E;color:#fff}
+.btn-gold{background:var(--gold);color:var(--ink);border-color:var(--ink)}
+.btn-gold:hover{background:#F0A24E;filter:none}
+.btn-ghost{background:var(--surface);border:2px solid var(--ink);color:var(--ink);box-shadow:none}
+.btn-ghost:hover{background:var(--surface2);color:var(--ink)}
+.btn-now{background:var(--primary);color:#fff}
+.chip,.badge,.tag,.cat-pill,.crm-card-origin,.backlink-item,.kn-tagchip,.crm-col-count{border-radius:99px;border:2px solid var(--ink);font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:700}
+.chip-on{background:var(--primary);border-color:var(--ink);color:#fff}
+
+/* ---------- superfícies: branco, contorno 2px, sombra dura, cantos arredondados ---------- */
+.card,.rv-card,.tl-card,.fin-stat-card,.book-card,.crm-card,.reward-card,.objective-card,.flow-card,.msala-id,.msala-radar,.char-page,.streak-card,.reward-balance-card,.achievement,.workout-template,.credit-card,#modal-box,.levelup-card,.tier-node{background:var(--surface);border:2px solid var(--ink) !important;border-radius:var(--r) !important;box-shadow:var(--shadow-sm) !important}
+.task-item,.shop-item,.event-item,.checklist-item,.tx-row,.fin-card-mini,.debt-card,.saving-card,.stmt-drop,.rv-mini>div,.cal-day,.tl-mood-btn{border-radius:var(--r-sm);border:2px solid var(--ink)}
+.rv-card:hover,.reward-card:hover:not(.cant-afford),.book-card:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow-md) !important}
+.rv-bills{border:2px solid var(--ink) !important;border-top:7px solid var(--pink) !important;box-shadow:var(--shadow-sm) !important}
+.char-page{background:var(--surface)}
+/* avatar (Personagem): fundo = quadrado preto de cantos arredondados */
+.char-big-avatar{background:#17150F !important;border:2px solid var(--ink) !important;border-radius:16px !important;overflow:hidden;box-shadow:var(--shadow-sm) !important}
+.char-big-avatar svg{border-radius:14px}
+.tl-card-now{background:var(--primary) !important;color:#fff;border:2px solid var(--ink) !important;border-radius:var(--r) !important;box-shadow:var(--shadow-md) !important}
+.tl-now-label{color:#FFC24B;font-weight:700}
+
+/* ---------- sidebar: papel + borda preta + ativo em pílula cheia ---------- */
+#sidebar{background:var(--surface) !important;border-right:2px solid var(--ink) !important}
+.nav-list li{border-radius:99px;font-weight:600}
+#sidebar .nav-list li.active,.nav-list li.active{background:var(--primary) !important;color:#fff !important;font-weight:700;box-shadow:var(--shadow-sm);border:2px solid var(--ink);text-decoration:none}
+#sidebar .nav-list li.active::before,.nav-list li.active::before{display:none}
+#sidebar .nav-list li.active svg{color:#fff !important}
+.sidebar-footer button,#theme-toggle{border-radius:99px !important;background:var(--surface) !important;border:2px solid var(--ink) !important;font-weight:700}
+#char-mini{border-bottom:2px solid var(--ink)}
+.char-avatar{background:var(--gold);border:2px solid var(--ink);box-shadow:var(--shadow-sm);border-radius:var(--r-sm);color:var(--ink);font-family:var(--font-display);font-weight:700}
+.char-class-badge{color:var(--muted) !important;font-family:'Space Grotesk',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.char-xp-bar-wrap{border-radius:99px;height:14px;border:2px solid var(--ink);background:var(--surface);overflow:hidden}
+.char-xp-bar{border-radius:0;background:repeating-linear-gradient(-45deg,var(--primary) 0 8px,var(--primary-l) 8px 16px)}
+
+/* ---------- avatar / herói ---------- */
+.avatar-orb{background:var(--gold);box-shadow:var(--shadow-md);border:2px solid var(--ink)}
+.avatar-orb-ring{display:none}
+.avatar-lvl{border-radius:99px;background:var(--primary);color:#fff;box-shadow:var(--shadow-sm);border:2px solid var(--ink);font-weight:700;font-family:var(--font-display)}
+.char-big-avatar{background:var(--gold);border:2px solid var(--ink);box-shadow:var(--shadow-md);animation:none;border-radius:var(--r)}
+.char-level-badge{border-radius:99px;background:var(--primary);color:#fff;font-weight:700;border:2px solid var(--ink);font-family:var(--font-display)}
+
+/* ---------- barras de progresso: listradas, grossas, contorno preto ---------- */
+.msala-xpbar,.xp-bar-outer,.obj-progress-bar,.rv-bar,.attr-bar-outer{border-radius:99px;height:16px;background:var(--surface);border:2px solid var(--ink);overflow:hidden}
+.msala-xpfill,.xp-bar-inner,.obj-progress-fill,.rv-bar-fill,.attr-bar-inner{border-radius:0;background:repeating-linear-gradient(-45deg,var(--primary) 0 10px,var(--primary-l) 10px 20px)}
+.tl-dot-done{background:var(--primary);border:2px solid var(--ink)}
+.tl-dot-current{background:var(--pink);border:2px solid var(--ink);box-shadow:none}
+.tl-card.future{border-style:dashed}
+.trilha-streak{border-radius:99px;border:2px solid var(--ink);color:var(--ink);box-shadow:var(--shadow-sm);font-size:12px;font-weight:700;background:var(--gold)}
+
+/* ---------- inputs ---------- */
+input,textarea,select{border-radius:var(--r-sm) !important;background:var(--surface);border:2px solid var(--ink)}
+input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:var(--ring);background:var(--surface)}
+.rv-idea-row input{background:var(--surface);border:2px solid var(--ink)}
+.rv-idea-row button{background:var(--primary);width:44px;color:#fff}
+
+/* ---------- modal / toasts ---------- */
+#modal-box{border:2px solid var(--ink) !important;box-shadow:var(--shadow-lg) !important}
+#modal-box::before{background:var(--pink)}
+#xp-toast,#undo-toast{border-radius:99px;background:var(--ink);border:2px solid var(--ink);color:var(--bg);font-weight:700}
+
+/* ---------- abas ---------- */
+.fin-tab.active,.lib-tab.active{background:var(--primary);border-color:var(--ink);color:#fff !important;box-shadow:var(--shadow-sm)}
+
+/* ---------- kanban (Comercial / Objetivos): cabeçalho sólido, contorno preto ---------- */
+.crm-col,.journey-col{border:2px solid var(--ink);border-radius:var(--r);background:var(--surface2);box-shadow:var(--shadow-sm)}
+.crm-col-head,.journey-col-head{border-radius:12px 12px 0 0 !important;border-bottom:2px solid var(--ink)}
+.journey-col-headtitle,.crm-col-head .crm-col-title{color:#fff !important;font-weight:700}
+.crm-col-head .crm-col-total{color:rgba(255,255,255,.85)}
+.crm-col-count{border-radius:99px;background:#fff;color:var(--ink);border:2px solid var(--ink)}
+
+a{color:var(--primary);text-decoration:none;font-weight:600}
+a:hover{color:var(--primary-d);text-decoration:underline;text-underline-offset:4px}
+
+/* ---------- ícones do menu com cor ---------- */
+.nav-list li svg{color:#5A62E8}
+.nav-list li[data-section="personagem"] svg{color:#6C55C8}
+.nav-list li[data-section="agenda"] svg{color:#2E7FA8}
+.nav-list li[data-section="objetivos"] svg{color:#C7402E}
+.nav-list li[data-section="linha"] svg{color:#E0913E}
+.nav-list li[data-section="insights"] svg{color:#FF6B5C}
+.nav-list li[data-section="espiritual"] svg{color:#C7402E}
+.nav-list li[data-section="financas"] svg{color:#17B893}
+.nav-list li[data-section="comercial"] svg{color:#2E7FA8}
+.nav-list li[data-section="treinos"] svg{color:#17B893}
+.nav-list li[data-section="biblioteca"] svg{color:#E0913E}
+.nav-list li[data-section="compras"] svg{color:#6C55C8}
+.nav-list li[data-section="recompensas"] svg{color:#FF6B5C}
+.reward-balance-value{color:var(--ink) !important}
+.reward-balance-card{background:var(--surface) !important}
+
+/* ---------- botões de excluir/editar: símbolo visível (a limpeza de emoji os deixava vazios) ---------- */
+.task-delete,.checklist-del,.tx-del,.reward-del,.book-del,.crm-card-del,.event-delete,.note-date-del,.notes-date-del-btn,.reward-history-del,button[onclick*='elete']{display:inline-flex;align-items:center;justify-content:center}
+.task-delete:empty::before,.checklist-del:empty::before,.tx-del:empty::before,.reward-del:empty::before,.book-del:empty::before,.crm-card-del:empty::before,.event-delete:empty::before,.note-date-del:empty::before,.notes-date-del-btn:empty::before,.reward-history-del:empty::before,button[onclick*='elete']:empty::before{content:'';display:inline-block;width:15px;height:15px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2'/%3E%3Cpath d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/%3E%3Cpath d='M10 11v6M14 11v6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2'/%3E%3Cpath d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6'/%3E%3Cpath d='M10 11v6M14 11v6'/%3E%3C/svg%3E") center/contain no-repeat}
+.notes-date-del-btn:empty::before{width:18px;height:18px}
+.tx-edit:empty::before,button[onclick*='_openEdit']:empty::before{content:'';display:inline-block;width:14px;height:14px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E") center/contain no-repeat}
+.modal-close:empty::before{content:'';display:inline-block;width:13px;height:13px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E") center/contain no-repeat}
+.task-delete,.reward-del,.book-del,.crm-card-del{opacity:.45}
+/* ---------- conjunto de ícones Atlas (usa currentColor) ---------- */
+.aticon{display:inline-block;width:24px;height:24px;background:currentColor;flex-shrink:0}
+.aticon-gift{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='7' width='20' height='5'/%3E%3Cpath d='M12 22V7'/%3E%3Cpath d='M20 12v10H4V12'/%3E%3Cpath d='M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z'/%3E%3Cpath d='M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='7' width='20' height='5'/%3E%3Cpath d='M12 22V7'/%3E%3Cpath d='M20 12v10H4V12'/%3E%3Cpath d='M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z'/%3E%3Cpath d='M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-star{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-coffee{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 8h1a4 4 0 0 1 0 8h-1'/%3E%3Cpath d='M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 8h1a4 4 0 0 1 0 8h-1'/%3E%3Cpath d='M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-book{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/%3E%3Cpath d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-plane{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 2 11 13'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4 20-7z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 2 11 13'/%3E%3Cpath d='M22 2 15 22l-4-9-9-4 20-7z'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-cart{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='21' r='1'/%3E%3Ccircle cx='20' cy='21' r='1'/%3E%3Cpath d='M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-film{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20'/%3E%3Cpath d='M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='2' width='20' height='20'/%3E%3Cpath d='M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-music{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'/%3E%3Ccircle cx='6' cy='18' r='3'/%3E%3Ccircle cx='18' cy='16' r='3'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-gamepad{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='6' y1='12' x2='10' y2='12'/%3E%3Cline x1='8' y1='10' x2='8' y2='14'/%3E%3Cline x1='15' y1='13' x2='15.01' y2='13'/%3E%3Cline x1='18' y1='11' x2='18.01' y2='11'/%3E%3Crect x='2' y='6' width='20' height='12'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='6' y1='12' x2='10' y2='12'/%3E%3Cline x1='8' y1='10' x2='8' y2='14'/%3E%3Cline x1='15' y1='13' x2='15.01' y2='13'/%3E%3Cline x1='18' y1='11' x2='18.01' y2='11'/%3E%3Crect x='2' y='6' width='20' height='12'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-dumbbell{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 7v10M10 4v16M14 4v16M18 7v10M2 12h4M18 12h4M10 12h4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 7v10M10 4v16M14 4v16M18 7v10M2 12h4M18 12h4M10 12h4'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-trophy{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3Cpath d='M7 4h10v6a5 5 0 0 1-10 0V4z'/%3E%3Cpath d='M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 21h8M12 17v4'/%3E%3Cpath d='M7 4h10v6a5 5 0 0 1-10 0V4z'/%3E%3Cpath d='M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-heart{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E") center/contain no-repeat}
+.aticon-coin{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4'/%3E%3C/svg%3E") center/contain no-repeat}
+/* recompensas: imagem padrão quando não há ícone definido */
+.reward-icon{display:flex;align-items:center;justify-content:center;min-height:38px}
+.reward-icon:empty::before{content:'';width:34px;height:34px;background:var(--navy);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='7' width='20' height='5'/%3E%3Cpath d='M12 22V7'/%3E%3Cpath d='M20 12v10H4V12'/%3E%3Cpath d='M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z'/%3E%3Cpath d='M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='7' width='20' height='5'/%3E%3Cpath d='M12 22V7'/%3E%3Cpath d='M20 12v10H4V12'/%3E%3Cpath d='M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z'/%3E%3Cpath d='M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'/%3E%3C/svg%3E") center/contain no-repeat}
+.reward-balance-icon:empty::before{content:'';display:inline-block;width:36px;height:36px;background:var(--pink);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E") center/contain no-repeat}
+.reward-balance-card:last-child .reward-balance-icon:empty::before,.reward-balance-icon.gold:empty::before{background:var(--orange);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v10M9.5 9.5h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4'/%3E%3C/svg%3E") center/contain no-repeat}
+.reward-card{border:1px solid var(--border);background:var(--surface)}
+.reward-card:hover:not(.cant-afford){border-color:var(--navy);transform:none;box-shadow:none}
+
+
+/* level up: cartão pop */
+#levelup-overlay{background:rgba(23,21,15,.6);backdrop-filter:blur(3px)}
+.levelup-card{background:var(--surface) !important;border:2px solid var(--ink) !important;border-top:8px solid var(--pink) !important;padding:48px 56px;text-align:center}
+.levelup-title{font-family:var(--font-display) !important;font-weight:700 !important;font-size:40px;color:var(--text) !important;letter-spacing:-.02em;text-transform:none}
+#levelup-msg{color:var(--text);font-size:15px;line-height:1.6;margin:14px 0 26px}
+#levelup-msg b{color:var(--primary)}#levelup-msg i{color:var(--muted)}
+.levelup-emoji{animation:none}
+.levelup-card button{background:var(--pink);color:#fff}
+.tier-node.current{border-color:var(--pink) !important}
+.achievement.earned{border-color:var(--primary) !important}
+
+/* ============================================================
+   DENSIDADE / RITMO — igual ao Atlas aprovado
+   ============================================================ */
+#main-content{padding:30px 40px}
+@media (min-width:1500px){#main-content{padding:34px 56px}}
+.section-header{margin-bottom:24px}
+.page-subtitle{margin-bottom:24px}
+.fin-tabs,.lib-tabs{gap:8px;margin-bottom:20px;align-items:stretch}
+.fin-tab,.lib-tab{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:9px 18px;line-height:1;min-height:40px}
+.fin-tab .eic-i,.fin-tab svg,.lib-tab .eic-i,.lib-tab svg{flex:0 0 auto}
+.card{padding:22px}
+.card+.card{margin-top:16px}
+.card-title{margin-bottom:14px;font-weight:700}
+.fin-summary-grid{gap:14px;margin-bottom:20px}
+.fin-stat-card{padding:18px}
+.rewards-grid{gap:14px}
+.reward-card{padding:18px}
+.books-grid{gap:16px}
+.section-header>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.section-header select,.section-header input[type=month],.section-header input[type=date]{min-height:40px}
+.reward-balance-card{padding:20px 22px;gap:16px}
+.trilha-side-label,.tl-mood-label,.fsc-label{margin-bottom:8px}
+
+/* ============================================================
+   ARCADE v2 — acabamento (toolbar, sombras do kanban, brinquedo)
+   ============================================================ */
+/* toolbar de topo: nunca deixa o botão órfão numa linha apertada */
+.section-header{align-items:flex-start;row-gap:12px}
+.section-header>div{gap:10px 12px;justify-content:flex-end}
+@media (max-width:1180px){.section-header{flex-wrap:wrap}.section-header>div{width:100%;justify-content:flex-start}}
+
+/* kanban/jornada/patentes: folga p/ a sombra dura não ser cortada no scroll */
+.crm-board,.journey-board,.tier-road{padding:6px 8px 22px 4px;overflow-y:visible}
+.crm-col,.journey-col{box-shadow:3px 3px 0 var(--ink)}
+.tier-node{border:2px solid var(--ink) !important;border-radius:14px !important;box-shadow:3px 3px 0 var(--ink);background:var(--surface) !important}
+.tier-node.current{border-color:var(--pink) !important;background:var(--surface) !important;box-shadow:4px 4px 0 var(--pink) !important;transform:none}
+
+/* toque de brinquedo: selos levemente rotacionados */
+.char-level-badge,.avatar-lvl{transform:rotate(-3deg)}
+.trilha-streak{transform:rotate(2deg)}
+.achievement.earned{transform:rotate(-1deg)}
+.achievement.earned:hover{transform:rotate(0) translate(-1px,-1px)}
+
+/* cards afundam no clique, como os botões */
+.rv-card:active,.reward-card:active,.book-card:active,.task-item:active,.tl-card:active{transform:translate(2px,2px);box-shadow:none !important}
+
+/* level up e modal: sombra máxima + leve inclinação divertida */
+.levelup-card{box-shadow:10px 10px 0 var(--ink) !important;transform:rotate(-1deg)}
+.levelup-card button{box-shadow:var(--shadow-sm)}
+#modal-box{box-shadow:10px 10px 0 var(--ink) !important}
+
+/* moeda/gold badge no header lateral com contorno */
+.char-xp-text{font-weight:700}
+
+/* ---------- hover legível no rodapé (border==text==preto deixava tudo invisível) ---------- */
+.sidebar-footer button:hover,#theme-toggle:hover,#skin-cycle:hover{background:var(--primary) !important;color:#fff !important;border-color:var(--ink) !important}
+.sidebar-footer button:hover svg,#theme-toggle:hover svg,#skin-cycle:hover svg{color:#fff !important}
+#btn-reset:hover{background:var(--pink) !important;color:#fff !important;border-color:var(--ink) !important}

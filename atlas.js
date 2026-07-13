@@ -34,15 +34,29 @@ function fixStyles(root){
 function stripEmoji(node){
   var w=document.createTreeWalker(node,NodeFilter.SHOW_TEXT),t;
   while(t=w.nextNode()){EMOJI.lastIndex=0;
-    if(EMOJI.test(t.nodeValue)){EMOJI.lastIndex=0;t.nodeValue=t.nodeValue.replace(EMOJI,'')}}
+    if(EMOJI.test(t.nodeValue)){EMOJI.lastIndex=0;t.nodeValue=t.nodeValue.replace(EMOJI,function(c){return (window._EIC&&window._EIC[c])?c:''})}}
 }
 function run(root){root=root||document.body;if(!root)return;fixStyles(root);stripEmoji(root)}
 new MutationObserver(function(ms){
   for(var i=0;i<ms.length;i++)for(var j=0;j<ms[i].addedNodes.length;j++){
     var n=ms[i].addedNodes[j];
     if(n.nodeType===1)run(n);
-    else if(n.nodeType===3){EMOJI.lastIndex=0;if(EMOJI.test(n.nodeValue)){EMOJI.lastIndex=0;n.nodeValue=n.nodeValue.replace(EMOJI,'')}}
+    else if(n.nodeType===3){EMOJI.lastIndex=0;if(EMOJI.test(n.nodeValue)){EMOJI.lastIndex=0;n.nodeValue=n.nodeValue.replace(EMOJI,function(c){return (window._EIC&&window._EIC[c])?c:''})}}
   }
 }).observe(document.documentElement,{childList:true,subtree:true});
 if(document.readyState!=='loading')run();else document.addEventListener('DOMContentLoaded',function(){run()});
 })();
+
+/* ATLAS token guard: o app escreve --primary/--bg etc. inline no <html>;
+   inline vence stylesheet, então removemos e mantemos removido. */
+(function(){
+var PROPS=['--primary','--primary-l','--primary-d','--gold','--pink','--pink-l','--bg','--surface','--surface2','--border','--border-soft','--text','--muted','--navy','--green','--red','--grad-brand'];
+function clean(){var s=document.documentElement.style;for(var i=0;i<PROPS.length;i++)if(s.getPropertyValue(PROPS[i]))s.removeProperty(PROPS[i])}
+new MutationObserver(clean).observe(document.documentElement,{attributes:true,attributeFilter:['style']});
+clean();document.addEventListener('DOMContentLoaded',clean);setTimeout(clean,800);
+})();
+
+/* Quadro de ícones do modal de recompensa (renderizados pelo motor padrão do sistema) */
+window._rwIcons=['🎁','🎮','📺','☕','🍕','🍽','🛍','🛒','📚','🎨','🎟','🔥','⭐','🏆','💎','🪙','💰','🎯','📅','💡','🧠','💪','🙏','✝','🥗','📈','⚡','🌞','🌙','⏰'];
+window._rwIconGrid=function(cur){return window._rwIcons.map(function(e){var on=e===cur;return '<button type="button" data-ic="'+e+'" onclick="window._pickRwIcon(this)" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:19px;background:'+(on?'#17150F':'transparent')+';color:'+(on?'#F7F5F0':'inherit')+';border:1px solid #D8D3C6;cursor:pointer;padding:0">'+e+'</button>'}).join('')};
+window._pickRwIcon=function(btn){var e=btn.getAttribute('data-ic');var i=document.getElementById('rw-icon');if(i)i.value=e;var g=document.getElementById('rw-icon-grid');if(g)g.querySelectorAll('button').forEach(function(b){var on=b===btn;b.style.background=on?'#17150F':'transparent';b.style.color=on?'#F7F5F0':'inherit'})};
