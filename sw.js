@@ -1,6 +1,6 @@
 // Service Worker — RPG Life (versão single-file, deploy GitHub Pages)
 // network-first: online sempre pega a versão mais nova; offline abre do cache.
-const CACHE = 'rpg-life-v17'
+const CACHE = 'rpg-life-v18'
 const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png']
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()))

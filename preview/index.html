@@ -3166,7 +3166,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       </div>
     </div>` : `
     <div class="card" style="padding:14px">
-      <p style="color:var(--muted);font-size:13px;margin-bottom:10px">Cada nota \xE9 um n\xF3. As linhas s\xE3o as liga\xE7\xF5es que voc\xEA cria com <b>[[nome da nota]]</b>; as pontilhadas conectam notas que compartilham a mesma <b>#tag</b>. Clique num n\xF3 para abrir a nota.</p>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:10px">Cada <b>#tag</b> \xE9 um n\xF3 central; suas notas se ligam a ela. As linhas <b>pontilhadas</b> conectam notas entre si via <b>[[nome da nota]]</b>. Toque numa nota para abrir; arraste os n\xF3s para organizar.</p>
       <canvas id="knowledge-graph-canvas" class="kn-graph-big"></canvas>
     </div>`}
   `;
@@ -3559,22 +3559,39 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       return;
     }
     const palette = ["#7C83FF", "#FF7A6B", "#34D8B4", "#FFB454", "#56C2F5", "#C079F6", "#F5A3C7", "#8AE28C"];
-    const groupColor = {}; let gi = 0;
-    const colorFor = (n) => { const g = (n.tags && n.tags[0]) ? n.tags[0].toLowerCase() : "_"; if (!(g in groupColor)) groupColor[g] = g === "_" ? "#6B7280" : palette[gi++ % palette.length]; return groupColor[g]; };
-    const nodes = notes.map((n, i) => { const ang = i / notes.length * Math.PI * 2; return { id: n.id, title: n.title || "sem t\xEDtulo", deg: 0, color: colorFor(n), x: W() / 2 + Math.cos(ang) * 120 + (Math.random() * 30 - 15), y: H() / 2 + Math.sin(ang) * 120 + (Math.random() * 30 - 15), vx: 0, vy: 0 }; });
-    const byId = {}; nodes.forEach((n) => byId[n.id] = n);
+    const tagColor = {}; let gi = 0;
+    const colorForTag = (tag) => { const k = tag.toLowerCase(); if (!(k in tagColor)) tagColor[k] = palette[gi++ % palette.length]; return tagColor[k]; };
+    // nós de NOTA
+    const nodes = []; const byId = {};
+    notes.forEach((n, i) => {
+      const ang = i / notes.length * Math.PI * 2;
+      const firstTag = (n.tags && n.tags[0]) ? n.tags[0].toLowerCase() : null;
+      const node = { id: n.id, kind: "note", title: n.title || "sem t\xEDtulo", deg: 0, color: firstTag ? colorForTag(firstTag) : "#6B7280", x: W() / 2 + Math.cos(ang) * 150 + (Math.random() * 30 - 15), y: H() / 2 + Math.sin(ang) * 150 + (Math.random() * 30 - 15), vx: 0, vy: 0 };
+      nodes.push(node); byId[n.id] = node;
+    });
+    // nós centrais de HASHTAG (hubs)
+    const tagSet = new Set();
+    notes.forEach((n) => (n.tags || []).forEach((t) => tagSet.add(t.toLowerCase())));
+    const tagList = [...tagSet];
+    tagList.forEach((tag, i) => {
+      const ang = i / Math.max(1, tagList.length) * Math.PI * 2;
+      const id = "tag:" + tag;
+      const node = { id, kind: "tag", title: "#" + tag, deg: 0, color: colorForTag(tag), x: W() / 2 + Math.cos(ang) * 55, y: H() / 2 + Math.sin(ang) * 55, vx: 0, vy: 0 };
+      nodes.push(node); byId[id] = node;
+    });
     const links = [];
+    // nota -> hub da sua tag
+    notes.forEach((n) => (n.tags || []).forEach((t) => {
+      const tid = "tag:" + t.toLowerCase();
+      if (byId[n.id] && byId[tid]) { links.push({ a: n.id, b: tid, type: "tag" }); byId[n.id].deg++; byId[tid].deg++; }
+    }));
+    // nota -> nota via [[link]]
     notes.forEach((n) => {
       [...(n.content || "").matchAll(/\[\[(.+?)\]\]/g)].forEach(([, title]) => {
         const t = notes.find((x) => (x.title || "").toLowerCase() === title.toLowerCase());
         if (t && byId[n.id] && byId[t.id]) { links.push({ a: n.id, b: t.id, type: "link" }); byId[n.id].deg++; byId[t.id].deg++; }
       });
     });
-    for (let i = 0; i < notes.length; i++) for (let j = i + 1; j < notes.length; j++) {
-      const a = (notes[i].tags || []).map((t) => t.toLowerCase());
-      const b = (notes[j].tags || []).map((t) => t.toLowerCase());
-      if (a.length && a.some((t) => b.includes(t))) { links.push({ a: notes[i].id, b: notes[j].id, type: "tag" }); byId[notes[i].id].deg++; byId[notes[j].id].deg++; }
-    }
     const nb = {}; nodes.forEach((n) => nb[n.id] = new Set());
     links.forEach((l) => { nb[l.a].add(l.b); nb[l.b].add(l.a); });
     let hover = null, drag = null, moved = false, downXY = null;
@@ -3584,29 +3601,35 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     // Pointer Events: mouse + toque + caneta num só caminho
     canvas.onpointermove = (ev) => { const [mx, my] = posOf(ev); if (drag) { ev.preventDefault(); drag.x = mx; drag.y = my; drag.vx = 0; drag.vy = 0; if (downXY && (Math.abs(mx - downXY[0]) > 6 || Math.abs(my - downXY[1]) > 6)) moved = true; } else if (ev.pointerType === "mouse") { const p = pick(mx, my, false); hover = p ? p.id : null; canvas.style.cursor = p ? "pointer" : "grab"; } };
     canvas.onpointerdown = (ev) => { ev.preventDefault(); const [mx, my] = posOf(ev); drag = pick(mx, my, ev.pointerType !== "mouse"); moved = false; downXY = [mx, my]; if (drag) { hover = drag.id; try { canvas.setPointerCapture(ev.pointerId); } catch (e) {} } };
-    canvas.onpointerup = (ev) => { try { canvas.releasePointerCapture(ev.pointerId); } catch (e) {} if (drag && !moved) { const nid = drag.id; drag = null; window._graphNotePopup(nid); return; } drag = null; };
+    canvas.onpointerup = (ev) => { try { canvas.releasePointerCapture(ev.pointerId); } catch (e) {} if (drag && !moved && drag.kind === "note") { const nid = drag.id; drag = null; window._graphNotePopup(nid); return; } drag = null; };
     canvas.onpointercancel = () => { drag = null; };
     canvas.onmouseleave = () => { hover = null; };
     canvas.onclick = null;
     function step() {
       for (let i = 0; i < nodes.length; i++) { const a = nodes[i]; for (let j = i + 1; j < nodes.length; j++) { const b = nodes[j]; let dx = a.x - b.x, dy = a.y - b.y; let d2 = dx * dx + dy * dy || 0.01; let d = Math.sqrt(d2); const rep = 3000 / d2; const fx = dx / d * rep, fy = dy / d * rep; a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy; } }
-      links.forEach((l) => { const a = byId[l.a], b = byId[l.b]; let dx = b.x - a.x, dy = b.y - a.y; let d = Math.sqrt(dx * dx + dy * dy) || 0.01; const target = l.type === "link" ? 95 : 140; const f = (d - target) * 0.02; const fx = dx / d * f, fy = dy / d * f; a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy; });
-      nodes.forEach((n) => { n.vx += (W() / 2 - n.x) * 0.0022; n.vy += (H() / 2 - n.y) * 0.0022; n.vx *= 0.85; n.vy *= 0.85; if (n !== drag) { n.x += n.vx; n.y += n.vy; } });
+      links.forEach((l) => { const a = byId[l.a], b = byId[l.b]; let dx = b.x - a.x, dy = b.y - a.y; let d = Math.sqrt(dx * dx + dy * dy) || 0.01; const target = l.type === "link" ? 90 : 108; const f = (d - target) * 0.02; const fx = dx / d * f, fy = dy / d * f; a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy; });
+      nodes.forEach((n) => { const cf = n.kind === "tag" ? 0.005 : 0.0016; n.vx += (W() / 2 - n.x) * cf; n.vy += (H() / 2 - n.y) * cf; n.vx *= 0.85; n.vy *= 0.85; if (n !== drag) { n.x += n.vx; n.y += n.vy; } });
     }
     function draw() {
       ctx.clearRect(0, 0, W(), H());
-      links.forEach((l) => { const a = byId[l.a], b = byId[l.b]; const act = hover && (l.a === hover || l.b === hover); if (l.type === "tag") ctx.setLineDash([4, 4]); else ctx.setLineDash([]); ctx.strokeStyle = l.type === "link" ? (act ? "rgba(124,131,255,.9)" : "rgba(138,144,166,.22)") : (act ? "rgba(255,122,107,.7)" : "rgba(138,144,166,.10)"); ctx.lineWidth = act ? 1.8 : 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
+      links.forEach((l) => { const a = byId[l.a], b = byId[l.b]; const act = hover && (l.a === hover || l.b === hover); if (l.type === "link") ctx.setLineDash([5, 4]); else ctx.setLineDash([]); ctx.strokeStyle = l.type === "tag" ? (act ? "rgba(124,131,255,.85)" : "rgba(138,144,166,.30)") : (act ? "rgba(255,122,107,.9)" : "rgba(255,122,107,.34)"); ctx.lineWidth = act ? 2 : (l.type === "tag" ? 1.3 : 1.2); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
       ctx.setLineDash([]);
       nodes.forEach((n) => {
-        const r = 5 + Math.min(10, n.deg * 2);
+        const isTag = n.kind === "tag";
+        const r = isTag ? (9 + Math.min(11, n.deg * 1.5)) : (5 + Math.min(10, n.deg * 2));
         const dim = hover && hover !== n.id && !nb[hover].has(n.id);
         ctx.globalAlpha = dim ? 0.22 : 1;
         ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = n.id === activeNoteId ? cssVar("--gold") : n.color;
-        ctx.shadowColor = n.color; ctx.shadowBlur = hover === n.id ? 20 : (dim ? 0 : 9);
+        ctx.fillStyle = (!isTag && n.id === activeNoteId) ? cssVar("--gold") : n.color;
+        ctx.shadowColor = n.color; ctx.shadowBlur = hover === n.id ? 20 : (dim ? 0 : (isTag ? 16 : 9));
         ctx.fill(); ctx.shadowBlur = 0;
-        if (n.id === activeNoteId) { ctx.lineWidth = 2; ctx.strokeStyle = cssVar("--gold"); ctx.beginPath(); ctx.arc(n.x, n.y, r + 4, 0, Math.PI * 2); ctx.stroke(); }
-        if (hover === n.id || n.deg >= 2 || nodes.length <= 16) { ctx.globalAlpha = dim ? 0.3 : 0.92; ctx.fillStyle = cssVar("--text"); ctx.font = "600 11px Sora, sans-serif"; ctx.textAlign = "center"; ctx.fillText(n.title.slice(0, 22), n.x, n.y - r - 7); }
+        if (isTag) { ctx.lineWidth = 2.5; ctx.strokeStyle = cssVar("--bg"); ctx.stroke(); }
+        if (!isTag && n.id === activeNoteId) { ctx.lineWidth = 2; ctx.strokeStyle = cssVar("--gold"); ctx.beginPath(); ctx.arc(n.x, n.y, r + 4, 0, Math.PI * 2); ctx.stroke(); }
+        if (isTag) {
+          ctx.globalAlpha = dim ? 0.45 : 1; ctx.fillStyle = n.color; ctx.font = "700 12px 'Space Mono', ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText(n.title.slice(0, 16), n.x, n.y - r - 8);
+        } else if (hover === n.id || n.deg >= 2 || nodes.length <= 22) {
+          ctx.globalAlpha = dim ? 0.3 : 0.92; ctx.fillStyle = cssVar("--text"); ctx.font = "600 11px Sora, sans-serif"; ctx.textAlign = "center"; ctx.fillText(n.title.slice(0, 22), n.x, n.y - r - 7);
+        }
         ctx.globalAlpha = 1;
       });
     }
