@@ -6997,6 +6997,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         return ns;
       });
       if (now) { checkStreak(); addXP(10, "mente"); }
+      else { addXP(-10, "mente"); }
       renderDashboard2();
     };
     window._trilhaDone = (id) => {
@@ -7008,6 +7009,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       t.doneAt = t.done ? (/* @__PURE__ */ new Date()).toISOString() : null;
       storage_default.set("tasks", arr);
       if (t.done && !wasDone) { addXP(t.xp, t.attr); checkStreak(); }
+      else if (!t.done && wasDone) { addXP(-t.xp, t.attr); }
       renderDashboard2();
     };
     window._trilhaAddIdea = () => {
