@@ -2596,9 +2596,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         return `
           <div class="checklist-item ${item.done ? "done" : ""}" id="cli-${i}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
-            <div class="checklist-text" style="flex:1">
-              <span>${esc2(item.text)}${item.movedFrom ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504} ${fmtDateBR(item.movedFrom)}</span>` : ""}</span>
-              ${item.desc ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;white-space:normal">${esc2(item.desc)}</div>` : ""}
+            <div class="checklist-text" style="flex:1;cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
+              <span>${esc2(item.text)}${item.desc ? ` <span style="color:var(--muted);font-size:11px">️\u{1F4C4}</span>` : ""}${item.movedFrom ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504} ${fmtDateBR(item.movedFrom)}</span>` : ""}</span>
+              ${item.desc ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${esc2(item.desc)}</div>` : ""}
             </div>
             ${item.due ? `<span class="badge badge-${overdue ? "red" : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
             <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
@@ -2649,19 +2649,43 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         renderPanels();
       };
       window._toggleCheck = (i) => {
-        let isNowDone = false;
+        let isNowDone = false, itemText = "";
         storage_default.update("notes", (ns) => {
           const item = ns[activeDate].checklist[i];
           item.done = !item.done;
-          isNowDone = item.done;
+          isNowDone = item.done; itemText = item.text || "";
+          item.doneAt = item.done ? Date.now() : null;
           return ns;
         });
         if (isNowDone) {
           checkStreak();
           addXP(10, "mente");
-        }
+          logTimeline("mente", "✓", "Atividade conclu\xEDda: " + itemText, null);
+        } else addXP(-10, "mente");
         renderPanels();
         renderDateList();
+      };
+      window._openCheckItem = (i) => {
+        const item = (storage_default.get("notes")[activeDate]?.checklist || [])[i];
+        if (!item) return;
+        const eqa = (s) => esc2(s).replace(/"/g, "&quot;");
+        window._modalContent(`
+        <div class="modal-title">${item.done ? "✓ " : ""}Atividade</div>
+        <div class="form-group"><label>T\xEDtulo</label><input id="ci-title" value="${eqa(item.text || "")}"></div>
+        <div class="form-group"><label>Descri\xE7\xE3o</label><textarea id="ci-desc" style="min-height:160px;resize:vertical" placeholder="Detalhes da atividade...">${esc2(item.desc || "")}</textarea></div>
+        <div class="form-group"><label>Concluir at\xE9 (opcional)</label><input type="datetime-local" id="ci-due" value="${item.due || ""}"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="window._saveCheckItem(${i})">Salvar</button>
+      `);
+        setTimeout(() => { const d = document.getElementById("ci-desc"); if (d) d.focus(); }, 50);
+        window._saveCheckItem = (idx) => {
+          const text = document.getElementById("ci-title").value.trim();
+          if (!text) return;
+          const desc = document.getElementById("ci-desc").value.trim();
+          const due = document.getElementById("ci-due").value || null;
+          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; } return ns; });
+          window._closeModal();
+          renderPanels();
+        };
       };
       window._delCheck = (i) => {
         const item = (storage_default.get("notes")[activeDate]?.checklist || [])[i];
@@ -7050,14 +7074,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       wrap.appendChild(d); wrap.appendChild(x);
     };
     window._dashToggleChk = (idx) => {
-      let now = false;
+      let now = false, itemText = "";
       storage_default.update("notes", (ns) => {
         ns[tISO] = ns[tISO] || { checklist: [], text: "", mood: "" };
         const it = ns[tISO].checklist[idx];
-        if (it) { it.done = !it.done; now = it.done; }
+        if (it) { it.done = !it.done; now = it.done; itemText = it.text || ""; it.doneAt = it.done ? Date.now() : null; }
         return ns;
       });
-      if (now) { checkStreak(); addXP(10, "mente"); }
+      if (now) { checkStreak(); addXP(10, "mente"); logTimeline("mente", "✓", "Atividade conclu\xEDda: " + itemText, null); }
       else { addXP(-10, "mente"); }
       renderDashboard2();
     };
