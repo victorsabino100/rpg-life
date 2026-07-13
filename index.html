@@ -466,6 +466,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .checklist-due-btn { background:none; border:none; color:var(--muted); cursor:pointer; opacity:.4; transition:all .15s ease; font-size:13px; flex-shrink:0; }
 .checklist-item:hover .checklist-due-btn { opacity:1; }
 .checklist-due-btn:hover { color:var(--pink); opacity:1; }
+.checklist-item.priority { --prio:#E0952B; background:linear-gradient(90deg, rgba(224,149,43,.15), rgba(224,149,43,.03) 70%); border-left:3px solid var(--prio); }
+.checklist-item.priority .checklist-text { font-weight:600; }
+.checklist-item.priority .checklist-check { border-color:var(--prio); }
+.checklist-item.priority .checklist-check.done { background:var(--prio); border-color:var(--prio); color:#fff; }
+.checklist-item.priority .checklist-check:hover { border-color:var(--prio); box-shadow:0 0 0 3px rgba(224,149,43,.18); }
+.checklist-item.priority.done { opacity:.62; }
+.checklist-prio-label { --prio:#E0952B; font-family:var(--font-mono); font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--prio); font-weight:700; margin:2px 0 7px; display:flex; align-items:center; gap:6px; }
+.checklist-prio-xp { font-family:var(--font-mono); font-size:10px; color:#E0952B; white-space:nowrap; flex-shrink:0; }
 .note-date-del { position:absolute; top:6px; right:6px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; opacity:.5; }
 .note-date-del:hover { color:var(--red); opacity:1; }
 .checklist-add { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
@@ -2605,6 +2613,26 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       ).join("")}
         </div>
       </div>
+      ${(() => {
+        const _mi = (t) => { try { return t.date ? new Date(t.date).toISOString().slice(0, 10) : todayStr(); } catch (e) { return todayStr(); } };
+        const prios = (storage_default.get("tasks") || []).filter((t) => _mi(t) === activeDate);
+        if (!prios.length) return "";
+        return `
+        <div class="checklist-prio-label">⚔️ Prioridades do dia — sala inicial</div>
+        <div id="checklist-prios">
+          ${prios.map((t) => {
+          const attr = (typeof ATTRS !== "undefined" && ATTRS[t.attr]) ? ATTRS[t.attr] : { emoji: "⚔️" };
+          return `
+            <div class="checklist-item priority ${t.done ? "done" : ""}">
+              <div class="checklist-check ${t.done ? "done" : ""}" onclick="window._togglePrioMission('${t.id}')">${t.done ? "✓" : ""}</div>
+              <div class="checklist-text" style="flex:1;cursor:pointer" onclick="window._togglePrioMission('${t.id}')">
+                <span>${attr.emoji} ${esc2(t.name)}</span>
+              </div>
+              <span class="checklist-prio-xp">+${t.xp} XP</span>
+            </div>`;
+        }).join("")}
+        </div>`;
+      })()}
       <div id="checklist-items">
         ${(note.checklist || []).map((item, i) => {
         const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
@@ -2661,6 +2689,18 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           return ns;
         });
         inp.value = "";
+        renderPanels();
+      };
+      window._togglePrioMission = (id) => {
+        const arr = storage_default.get("tasks") || [];
+        const t = arr.find((x) => x.id === id);
+        if (!t) return;
+        const was = t.done;
+        t.done = !t.done;
+        t.doneAt = t.done ? (/* @__PURE__ */ new Date()).toISOString() : null;
+        storage_default.set("tasks", arr);
+        if (t.done && !was) { addXP(t.xp, t.attr); if (typeof checkStreak === "function") checkStreak(); if (typeof logTimeline === "function") logTimeline(t.attr, "⚔️", "Miss\xE3o conclu\xEDda: " + t.name, null); }
+        else if (!t.done && was) { addXP(-t.xp, t.attr); if (typeof removeTimelineByName === "function") removeTimelineByName(t.name); }
         renderPanels();
       };
       window._toggleCheck = (i) => {
