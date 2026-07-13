@@ -2866,16 +2866,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     window._objDrop = (ev, stage) => {
       ev.preventDefault();
       if (!_objDragId) return;
-      let justCompleted = false, attrKey = "mente";
+      let justCompleted = false, justUncompleted = false, attrKey = "mente";
       storage_default.update("objectives", (os) => {
         const o = os.find((x) => x.id === _objDragId);
         if (o && o.stage !== stage) {
+          const wasConcluido = o.stage === "concluido";
           o.stage = stage;
           attrKey = o.attr || "mente";
           if (stage === "concluido" && !o.rewarded) {
             o.rewarded = true;
             o.completedAt = (/* @__PURE__ */ new Date()).toISOString();
             justCompleted = true;
+          } else if (wasConcluido && stage !== "concluido" && o.rewarded) {
+            o.rewarded = false;
+            justUncompleted = true;
           }
         }
         return os;
@@ -2885,6 +2889,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         addXP(150, attrKey);
         celebrate("\u{1F3AF} Objetivo conclu\xEDdo! +150 XP");
       }
+      if (justUncompleted) addXP(-150, attrKey);
       renderBoard();
     };
     renderBoard();
@@ -2934,7 +2939,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     return { saude: "green", mente: "purple", riqueza: "gold", relacionamentos: "pink", carreira: "blue", espiritual: "red", mente: "orange" }[k] || "blue";
   }
   function toggleMilestone(objId, mIdx) {
-    let becameDone = false, justCompleted = false, attrKey = "mente";
+    let becameDone = false, justCompleted = false, justUncompleted = false, attrKey = "mente";
     storage_default.update("objectives", (objs) => {
       const obj = objs.find((o) => o.id === objId);
       if (obj && obj.milestones[mIdx]) {
@@ -2948,15 +2953,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           obj.stage = "concluido";
           obj.completedAt = (/* @__PURE__ */ new Date()).toISOString();
           justCompleted = true;
+        } else if (!allDone && obj.rewarded) {
+          obj.rewarded = false;
+          if (obj.stage === "concluido") obj.stage = "andamento";
+          justUncompleted = true;
         }
       }
       return objs;
     });
-    if (becameDone) addXP(15, attrKey);
+    if (becameDone) addXP(15, attrKey); else addXP(-15, attrKey);
     if (justCompleted) {
       addXP(150, attrKey);
       celebrate("\u{1F3AF} Objetivo conclu\xEDdo! +150 XP");
     }
+    if (justUncompleted) addXP(-150, attrKey);
     renderBoard();
     openEditObjectiveModal(objId);
   }
@@ -3047,16 +3057,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <button class="btn btn-ghost btn-sm" style="color:var(--red);margin-top:8px" onclick="window._deleteObj('${id}')">\u{1F5D1} Excluir Objetivo</button>
   `);
     window._moveObj = (oid, stage) => {
-      let justCompleted = false, attrKey = "mente";
+      let justCompleted = false, justUncompleted = false, attrKey = "mente";
       storage_default.update("objectives", (os) => {
         const o = os.find((x) => x.id === oid);
         if (o) {
+          const wasConcluido = o.stage === "concluido";
           o.stage = stage;
           attrKey = o.attr || "mente";
           if (stage === "concluido" && !o.rewarded) {
             o.rewarded = true;
             o.completedAt = (/* @__PURE__ */ new Date()).toISOString();
             justCompleted = true;
+          } else if (wasConcluido && stage !== "concluido" && o.rewarded) {
+            o.rewarded = false;
+            justUncompleted = true;
           }
         }
         return os;
@@ -3065,6 +3079,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         addXP(150, attrKey);
         celebrate("\u{1F3AF} Objetivo conclu\xEDdo! +150 XP");
       }
+      if (justUncompleted) addXP(-150, attrKey);
       renderBoard();
     };
     window._addMilestone = (oid) => {
@@ -3085,7 +3100,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       window._closeModal();
       if (obj) {
         const doneMilestones = (obj.milestones || []).filter((m) => m.done).length;
-        let totalXP = doneMilestones * 15 + (obj.rewarded ? 150 : 0);
+        let totalXP = 10 + doneMilestones * 15 + (obj.rewarded ? 150 : 0);
         if (totalXP > 0) {
           const coins = Math.ceil(totalXP / COIN_RATE);
           if (confirm(`Este objetivo gerou ${totalXP} XP e \u{1FA99}${coins} ao longo do tempo. Deseja remover esses pontos tamb\xE9m?`)) {
@@ -4442,18 +4457,29 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     });
   }
   function toggleFixedStatus(id, status) {
+    let delta = 0;
     storage_default.update("finance", (f) => {
       const x = f.fixedExpenses.find((x2) => x2.id === id);
       if (x) {
+        const wasPaid = x.status === "paid";
         x.status = status;
-        if (status === "paid") addXP(10, "riqueza");
+        if (status === "paid" && !wasPaid) delta = 10;
+        else if (status !== "paid" && wasPaid) delta = -10;
       }
       return f;
     });
+    if (delta) addXP(delta, "riqueza");
     renderFinContent();
   }
   function deleteItem(type, id) {
-    if (!confirm("Excluir este item?")) return;
+    const f0 = storage_default.get("finance") || {};
+    const arrMap = { incomes: f0.incomes, fixed: f0.fixedExpenses, variable: f0.variableExpenses, debt: f0.debts, saving: f0.savings, card: f0.creditCards };
+    const item = (arrMap[type] || []).find((x) => x.id === id);
+    let earned = 0;
+    if (type === "incomes") earned = 20;
+    else if (type === "fixed") earned = item && item.status === "paid" ? 10 : 0;
+    else if (type === "saving") earned = 10 + (item && item.rewarded ? 120 : 0);
+    if (!askDelete(item && item.name || "item", earned, "riqueza")) return;
     storage_default.update("finance", (f) => {
       if (type === "incomes") f.incomes = f.incomes.filter((x) => x.id !== id);
       if (type === "fixed") f.fixedExpenses = f.fixedExpenses.filter((x) => x.id !== id);
@@ -5851,19 +5877,30 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     window._crmDrop = (ev, stageId) => {
       ev.preventDefault();
       if (!_dragId) return;
+      let delta = 0;
       storage_default.update("crm", (c) => {
+        const wonStage = c.stages.find((s) => s.won);
         const l = c.leads.find((x) => x.id === _dragId);
         if (l && l.stageId !== stageId) {
+          const wasWon = l.stageId === (wonStage && wonStage.id);
           l.stageId = stageId;
           l.movedAt = (/* @__PURE__ */ new Date()).toISOString();
+          const nowWon = stageId === (wonStage && wonStage.id);
+          if (nowWon && !l.rewarded) { l.rewarded = true; delta = 50; }
+          else if (!nowWon && wasWon && l.rewarded) { l.rewarded = false; delta = -50; }
         }
         return c;
       });
       _dragId = null;
+      if (delta) addXP(delta, "carreira");
       renderCRM(container);
     };
     window._crmDelLead = (id) => {
-      const lead = (storage_default.get("crm")?.leads || []).find((l) => l.id === id);
+      const crmNow = storage_default.get("crm") || {};
+      const lead = (crmNow.leads || []).find((l) => l.id === id);
+      const wonStage = (crmNow.stages || []).find((s) => s.won);
+      const earned = lead && (lead.rewarded || lead.stageId === (wonStage && wonStage.id)) ? 50 : 0;
+      if (!askDelete(lead && lead.name || "lead", earned, "carreira")) return;
       storage_default.update("crm", (c) => {
         c.leads = c.leads.filter((l) => l.id !== id);
         return c;
@@ -6012,11 +6049,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (l) {
             const wasWon = l.stageId === wonStage?.id;
             Object.assign(l, data);
-            if (!wasWon && data.stageId === wonStage?.id) wonNow = true;
+            if (!wasWon && data.stageId === wonStage?.id && !l.rewarded) { wonNow = true; l.rewarded = true; }
           }
         } else {
-          c.leads.push({ id: Date.now().toString(), ...data, createdAt: (/* @__PURE__ */ new Date()).toISOString() });
-          if (data.stageId === wonStage?.id) wonNow = true;
+          const nl = { id: Date.now().toString(), ...data, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
+          if (data.stageId === wonStage?.id) { wonNow = true; nl.rewarded = true; }
+          c.leads.push(nl);
         }
         return c;
       });
