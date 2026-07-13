@@ -526,10 +526,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .flow-wrap { position:relative; overflow:auto; height:calc(100dvh - 320px); min-height:380px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); -webkit-overflow-scrolling:touch; }
 .flow-board { position:relative; width:1600px; height:1200px; background-image:radial-gradient(circle, var(--border) 1px, transparent 1px); background-size:28px 28px; }
 .flow-board svg { position:absolute; inset:0; width:100%; height:100%; }
-.flow-node { position:absolute; max-width:210px; padding:5px 12px 8px; background:transparent; border:none; border-bottom:3px solid var(--primary); border-radius:6px; font-size:14.5px; font-weight:600; color:var(--text); text-align:center; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; transform:translate(-50%,-50%); word-break:break-word; line-height:1.35; white-space:nowrap; }
-.flow-node.root { font-family:var(--font-display); font-size:18px; font-weight:800; border-bottom-width:4px; max-width:260px; white-space:normal; min-width:150px; }
-.flow-node.sel { background:color-mix(in srgb, var(--primary) 12%, transparent); box-shadow:0 0 0 2px rgba(124,131,255,.35); }
-.flow-node.linking { background:rgba(255,122,107,.14); box-shadow:0 0 0 2px rgba(255,122,107,.5); }
+.flow-node { position:absolute; max-width:210px; padding:9px 15px; background:var(--primary); border:1px solid rgba(0,0,0,.16); border-radius:10px; font-size:14.5px; font-weight:600; color:#fff; text-align:center; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; transform:translate(-50%,-50%); word-break:break-word; line-height:1.35; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,.16); }
+.flow-node.root { font-family:var(--font-display); font-size:18px; font-weight:800; max-width:260px; white-space:normal; min-width:150px; padding:11px 19px; }
+.flow-node.sel { box-shadow:0 0 0 3px rgba(124,131,255,.55), 0 2px 8px rgba(0,0,0,.16); }
+.flow-node.linking { box-shadow:0 0 0 3px rgba(255,122,107,.6), 0 2px 8px rgba(0,0,0,.16); }
 .flow-toggle { position:absolute; right:-32px; top:50%; transform:translateY(-50%); width:25px; height:25px; border-radius:50%; background:var(--surface); border:2.5px solid var(--primary); color:var(--text); font-size:13px; font-weight:800; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; box-shadow:var(--shadow-sm); z-index:3; }
 .flow-toggle.closed { color:#fff; }
 .flow-editbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; padding:11px 13px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); }
@@ -2050,6 +2050,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   var flowState = { openId: null, sel: null, linkFrom: null };
   var flowLive = null;
   var FLOW_COLORS = ["#7C83FF", "#FF7A6B", "#34D8B4", "#FFB454", "#56C2F5", "#C079F6", "#8A90A6"];
+  function _flContrast(hex) {
+    try { var n = parseInt(String(hex).replace("#", ""), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      var L = (0.299 * r + 0.587 * g + 0.114 * b) / 255; return L > 0.62 ? "#17150F" : "#fff"; } catch (e) { return "#fff"; }
+  }
   function flowsGet() { const f = storage_default.get("flows"); return f && Array.isArray(f.items) ? f : { items: [] }; }
   function flowsSave(f) { storage_default.set("flows", f); }
   function flowCur() { return flowsGet().items.find((x) => x.id === flowState.openId) || null; }
@@ -2201,7 +2205,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     el.className = "flow-node" + (isRoot ? " root" : "") + (flowState.sel === n.id ? " sel" : "") + (flowState.linkFrom === n.id ? " linking" : "");
     el.dataset.nid = n.id;
     el.style.left = n.x + "px"; el.style.top = n.y + "px";
-    el.style.borderColor = n.color || "#7C83FF";
+    const _col = n.color || "#7C83FF";
+    el.style.background = _col;
+    const _ink = _flContrast(_col);
+    el.style.color = _ink;
+    el.style.borderColor = _ink === "#fff" ? "rgba(0,0,0,.20)" : "rgba(0,0,0,.10)";
     const txt = document.createElement("span");
     txt.className = "fl-txt"; txt.textContent = n.text || "…";
     el.appendChild(txt);
