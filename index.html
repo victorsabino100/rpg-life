@@ -3023,7 +3023,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         createdAt: (/* @__PURE__ */ new Date()).toISOString()
       };
       storage_default.update("objectives", (os) => [...os, obj]);
-      addXP(10, obj.attr);
       window._closeModal();
       renderBoard();
     };
@@ -3100,7 +3099,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       window._closeModal();
       if (obj) {
         const doneMilestones = (obj.milestones || []).filter((m) => m.done).length;
-        let totalXP = 10 + doneMilestones * 15 + (obj.rewarded ? 150 : 0);
+        let totalXP = doneMilestones * 15 + (obj.rewarded ? 150 : 0);
         if (totalXP > 0) {
           const coins = Math.ceil(totalXP / COIN_RATE);
           if (confirm(`Este objetivo gerou ${totalXP} XP e \u{1FA99}${coins} ao longo do tempo. Deseja remover esses pontos tamb\xE9m?`)) {
