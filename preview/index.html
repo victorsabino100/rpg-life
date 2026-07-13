@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>🎨 RPG Life — PRÉVIA</title>
+  <title>⚔️ RPG Life</title>
   <!-- PWA / instalável como app -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0A0F1C">
@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <script>try{var t=localStorage.getItem('rpgx_theme');if(t!=='light')document.documentElement.setAttribute('data-theme','dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
+  <script>try{var t=localStorage.getItem('rpg_theme');if(t!=='light')document.documentElement.setAttribute('data-theme','dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}</script>
   <style>
 /* ============================================================
    RPG LIFE — visual system (CSS-only refresh, brand palette)
@@ -431,7 +431,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .ncal-day.alldone .ncal-dot { background:var(--green); }
 .notes-right { display:grid; grid-template-columns:1fr 1fr; gap:16px; min-height:calc(100vh - 230px); }
 .notes-panel { display:flex; flex-direction:column; overflow:hidden; }
-#notes-checklist-panel { max-height:260px; overflow-y:auto; }
+#notes-checklist-panel { max-height:560px; overflow-y:auto; }
 .note-date-item { padding:9px 13px; border-radius:var(--r-sm); cursor:pointer; font-size:13px; color:var(--muted); transition:all .15s ease; margin-bottom:4px; border-left:3px solid transparent; position:relative; }
 .note-date-item:hover { background:var(--surface2); color:var(--text); }
 .note-date-item.active { border-left-color:var(--primary); background:var(--surface2); color:var(--text); }
@@ -1018,27 +1018,27 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
 (() => {
   // js/storage.js
   var KEYS = {
-    character: "rpgx_char",
-    tasks: "rpgx_tasks",
-    notes: "rpgx_notes",
-    objectives: "rpgx_obj",
-    insights: "rpgx_insights",
-    knowledge: "rpgx_insights",
-    finance: "rpgx_fin",
-    events: "rpgx_events",
-    rewards: "rpgx_rewards",
-    shopping: "rpgx_shop",
-    library: "rpgx_lib",
-    habits: "rpgx_habits",
-    settings: "rpgx_settings",
-    crm: "rpgx_crm",
-    agenda: "rpgx_agenda",
-    timeline: "rpgx_timeline",
-    dayMoods: "rpgx_daymoods",
-    spiritual: "rpgx_spiritual",
-    meals: "rpgx_meals",
-    shoppingCats: "rpgx_shopcats",
-    flows: "rpgx_flows"
+    character: "rpg_char",
+    tasks: "rpg_tasks",
+    notes: "rpg_notes",
+    objectives: "rpg_obj",
+    insights: "rpg_insights",
+    knowledge: "rpg_insights",
+    finance: "rpg_fin",
+    events: "rpg_events",
+    rewards: "rpg_rewards",
+    shopping: "rpg_shop",
+    library: "rpg_lib",
+    habits: "rpg_habits",
+    settings: "rpg_settings",
+    crm: "rpg_crm",
+    agenda: "rpg_agenda",
+    timeline: "rpg_timeline",
+    dayMoods: "rpg_daymoods",
+    spiritual: "rpg_spiritual",
+    meals: "rpg_meals",
+    shoppingCats: "rpg_shopcats",
+    flows: "rpg_flows"
   };
   var DEFAULTS = {
     character: {
@@ -1795,16 +1795,16 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function gcalMonthKey(y, m) { return y + "-" + String(m + 1).padStart(2, "0"); }
   function gcalRestoreToken() {
     try {
-      gcalGranted = localStorage.getItem("rpgx_gcal_granted") === "1";
-      const s = JSON.parse(localStorage.getItem("rpgx_gcal_tok") || "null");
+      gcalGranted = localStorage.getItem("rpg_gcal_granted") === "1";
+      const s = JSON.parse(localStorage.getItem("rpg_gcal_tok") || "null");
       if (s && s.t && Date.now() < s.e) { gcalToken = s.t; gcalExpiry = s.e; }
     } catch (e) {}
   }
-  function gcalHint() { try { return localStorage.getItem("rpgx_gcal_hint") || ""; } catch (e) { return ""; } }
+  function gcalHint() { try { return localStorage.getItem("rpg_gcal_hint") || ""; } catch (e) { return ""; } }
   async function gcalLearnHint() {
     try {
       const res = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary", { headers: { Authorization: "Bearer " + gcalToken } });
-      if (res.ok) { const d = await res.json(); if (d && d.id) { localStorage.setItem("rpgx_gcal_hint", d.id); gcalTokenClient = null; } }
+      if (res.ok) { const d = await res.json(); if (d && d.id) { localStorage.setItem("rpg_gcal_hint", d.id); gcalTokenClient = null; } }
     } catch (e) {}
   }
   function gcalEnsureClient() {
@@ -1820,7 +1820,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           gcalToken = resp.access_token;
           gcalExpiry = Date.now() + (Number(resp.expires_in || 3600) - 60) * 1e3;
           gcalGranted = true; gcalCache = {};
-          try { localStorage.setItem("rpgx_gcal_tok", JSON.stringify({ t: gcalToken, e: gcalExpiry })); localStorage.setItem("rpgx_gcal_granted", "1"); } catch (e) {}
+          try { localStorage.setItem("rpg_gcal_tok", JSON.stringify({ t: gcalToken, e: gcalExpiry })); localStorage.setItem("rpg_gcal_granted", "1"); } catch (e) {}
           if (!gcalHint()) gcalLearnHint();
         }
         const p = gcalPending; gcalPending = null;
@@ -1850,7 +1850,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     if (!gcalEnsureClient()) return;
     try { gcalTokenClient.requestAccessToken({ prompt: "" }); } catch (e) {}
   }
-  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalGranted = false; gcalCache = {}; gcalTokenClient = null; try { localStorage.removeItem("rpgx_gcal_tok"); localStorage.removeItem("rpgx_gcal_granted"); localStorage.removeItem("rpgx_gcal_hint"); } catch (e) {} }
+  function gcalDisconnect() { gcalToken = null; gcalExpiry = 0; gcalGranted = false; gcalCache = {}; gcalTokenClient = null; try { localStorage.removeItem("rpg_gcal_tok"); localStorage.removeItem("rpg_gcal_granted"); localStorage.removeItem("rpg_gcal_hint"); } catch (e) {} }
   function gcalNormalize(it) {
     const startISO = it.start && (it.start.dateTime || (it.start.date ? it.start.date + "T00:00:00" : null));
     const endISO = it.end && (it.end.dateTime || (it.end.date ? it.end.date + "T00:00:00" : null));
@@ -6192,12 +6192,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
 
   // js/sync.js
-  var CFG_KEY = "rpgx_sync_cfg";
+  var CFG_KEY = "rpg_sync_cfg";
   var DEFAULT_CFG = {
     url: "https://esuvnbgxoktjjutmwwhs.supabase.co",
     key: "sb_publishable_BvVKOAzUthKxk4mNvHum9A_7cDu7Lcr"
   };
-  var DATA_KEYS = ["rpgx_char", "rpgx_tasks", "rpgx_notes", "rpgx_obj", "rpgx_insights", "rpgx_fin", "rpgx_events", "rpgx_rewards", "rpgx_shop", "rpgx_lib", "rpgx_habits", "rpgx_settings", "rpgx_crm", "rpgx_agenda", "rpgx_timeline", "rpgx_daymoods", "rpgx_spiritual", "rpgx_meals", "rpgx_shopcats", "rpgx_flows"];
+  var DATA_KEYS = ["rpg_char", "rpg_tasks", "rpg_notes", "rpg_obj", "rpg_insights", "rpg_fin", "rpg_events", "rpg_rewards", "rpg_shop", "rpg_lib", "rpg_habits", "rpg_settings", "rpg_crm", "rpg_agenda", "rpg_timeline", "rpg_daymoods", "rpg_spiritual", "rpg_meals", "rpg_shopcats", "rpg_flows"];
   function getSyncCfg() {
     try {
       return { ...DEFAULT_CFG, ...JSON.parse(localStorage.getItem(CFG_KEY) || "{}") };
@@ -6363,7 +6363,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     }
     toast(r.ok ? "\u2705 Atualizado!" : "\u26A0\uFE0F " + r.msg);
     if (r.ok && r.changed) {
-      sessionStorage.setItem("rpgx_pulled", "1");
+      sessionStorage.setItem("rpg_pulled", "1");
       location.reload();
       return;
     }
@@ -7286,8 +7286,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   };
   renderCharMini();
   navigate("dashboard");
-  if (syncEnabled() && !sessionStorage.getItem("rpgx_pulled")) {
-    sessionStorage.setItem("rpgx_pulled", "1");
+  if (syncEnabled() && !sessionStorage.getItem("rpg_pulled")) {
+    sessionStorage.setItem("rpg_pulled", "1");
     pull().then((r) => {
       if (r && r.changed) location.reload();
     });
@@ -7324,11 +7324,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
 <script>
   // Registra o service worker (permite instalar como app e abrir offline)
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => Promise.reject('preview-no-sw').catch(() => {}));
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
 </script>
 <script>
-/* Additive theme toggle — não altera a lógica do app. Usa chave própria 'rpgx_theme'. */
+/* Additive theme toggle — não altera a lógica do app. Usa chave própria 'rpg_theme'. */
 (function(){
   function setLabel(btn){
     var dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -7344,8 +7344,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     setLabel(btn);
     btn.addEventListener('click', function(){
       var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      if(dark){ document.documentElement.removeAttribute('data-theme'); try{localStorage.setItem('rpgx_theme','light');}catch(e){} }
-      else { document.documentElement.setAttribute('data-theme','dark'); try{localStorage.setItem('rpgx_theme','dark');}catch(e){} }
+      if(dark){ document.documentElement.removeAttribute('data-theme'); try{localStorage.setItem('rpg_theme','light');}catch(e){} }
+      else { document.documentElement.setAttribute('data-theme','dark'); try{localStorage.setItem('rpg_theme','dark');}catch(e){} }
       setLabel(btn);
     });
     footer.appendChild(btn);
