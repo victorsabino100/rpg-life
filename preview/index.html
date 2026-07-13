@@ -6482,6 +6482,25 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     document.execCommand("bold");
     window._richSaveRange(id); if (window._richCbs[id]) window._richCbs[id]();
   };
+  // Limpa texto colado: remove fundo/cor/fonte e mapeia tamanhos pro sistema (Título=3, Subtítulo=2, Corpo=1)
+  function _richSanitizePaste(html) {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html || "";
+    tmp.querySelectorAll("script,style,meta,link,title,head,img,svg,input,button,figure,table").forEach((n) => n.remove());
+    tmp.querySelectorAll("*").forEach((el) => {
+      const tag = el.tagName.toLowerCase();
+      let lvl = 0;
+      if (tag === "h1" || tag === "h2") lvl = 3;
+      else if (tag === "h3" || tag === "h4" || tag === "h5" || tag === "h6") lvl = 2;
+      else { const fs = parseFloat((el.style && el.style.fontSize) || ""); if (fs) { if (fs >= 22) lvl = 3; else if (fs >= 17) lvl = 2; else lvl = 1; } }
+      const bold = (el.style && (el.style.fontWeight === "bold" || parseInt(el.style.fontWeight, 10) >= 600)) || tag === "b" || tag === "strong";
+      ["style", "class", "id", "bgcolor", "color", "face", "align", "width", "height", "dir"].forEach((a) => el.removeAttribute(a));
+      if (lvl >= 2) { const c = RICH_SIZES[lvl]; el.style.fontSize = c.size; el.style.fontWeight = c.weight; el.style.lineHeight = "1.35"; }
+      else if (bold) el.style.fontWeight = "700";
+    });
+    tmp.querySelectorAll("h1,h2,h3,h4,h5,h6,p").forEach((el) => { const d = document.createElement("div"); const st = el.getAttribute("style"); if (st) d.setAttribute("style", st); while (el.firstChild) d.appendChild(el.firstChild); el.replaceWith(d); });
+    return tmp.innerHTML;
+  }
   function richWire(id, initialHtml, cb) {
     const ed = richGet(id); if (!ed) return;
     if (initialHtml) ed.innerHTML = initialHtml; else ed.innerHTML = "";
@@ -6489,6 +6508,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     let t;
     ed.addEventListener("input", () => { clearTimeout(t); t = setTimeout(cb, 350); });
     ed.addEventListener("blur", cb);
+    ed.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData; if (!cd) return;
+      let html = cd.getData("text/html");
+      if (!html) { const txt = cd.getData("text/plain") || ""; html = txt.split("\n").map((l) => l ? escHtml(l) : "").join("<br>"); }
+      const clean = _richSanitizePaste(html);
+      document.execCommand("insertHTML", false, clean);
+      if (window._richCbs[id]) window._richCbs[id]();
+    });
     ed.addEventListener("keyup", () => { window._richSaveRange(id); window._richDetect(id); });
     ed.addEventListener("mouseup", () => { window._richSaveRange(id); setTimeout(() => window._richDetect(id), 0); });
     setTimeout(() => window._richDetect(id), 0);
@@ -6659,6 +6687,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <input class="knowledge-editor-title" id="sp-title" value="${esc(note.title || "")}" placeholder="${folder.kind === "sermon" ? "T\xEDtulo da prega\xE7\xE3o" : folder.kind === "devotional" ? "Ex: Jo\xE3o 3 \u2014 16/07" : "T\xEDtulo"}">
       <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="window._spPresent()" title="Tela cheia para pregar">\u26f6 Tela cheia</button>
         ${folder.kind === "devotional" ? `<button class="btn btn-sm ${doneToday ? "btn-ghost" : "btn-primary"}" onclick="window._spToggleDevo()">${doneToday ? "\u2713 Conclu\xEDdo hoje" : "\u{1F64F} Concluir devocional"}</button>` : ""}
         <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._spDelNote()">\u{1F5D1}</button>
       </div>
@@ -6677,6 +6706,35 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
     titleEl.addEventListener("input", () => { clearTimeout(titleEl._t); titleEl._t = setTimeout(() => { save(); }, 350); });
     richWire("sp", note.html || "", save);
+    window._spPresent = () => {
+      const ed = richGet("sp");
+      const html = (ed && ed.innerHTML) || note.html || "";
+      const title = (document.getElementById("sp-title")?.value || note.title || "").trim();
+      document.getElementById("sp-present")?.remove();
+      let z = 1.7;
+      const ov = document.createElement("div");
+      ov.id = "sp-present";
+      ov.style.cssText = "position:fixed;inset:0;z-index:600;background:var(--bg);color:var(--text);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(56px + env(safe-area-inset-top,0px)) 6vw calc(40px + env(safe-area-inset-bottom,0px))";
+      ov.innerHTML = `
+        <div style="position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:12px;display:flex;gap:8px;z-index:2">
+          <button id="sp-pzless" class="btn btn-ghost btn-sm" title="Diminuir">A−</button>
+          <button id="sp-pzmore" class="btn btn-ghost btn-sm" title="Aumentar">A+</button>
+          <button id="sp-pclose" class="btn btn-primary btn-sm">✕ Sair</button>
+        </div>
+        ${title ? `<div style="max-width:920px;margin:0 auto;font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:-.01em;margin-bottom:18px">${esc(title)}</div>` : ""}
+        <div id="sp-present-body" style="max-width:920px;margin:0 auto;font-family:var(--font-body);line-height:1.6;zoom:${z}">${html}</div>`;
+      document.body.appendChild(ov);
+      try { ov.requestFullscreen && ov.requestFullscreen(); } catch (e) {}
+      try { if (window.matchMedia && window.screen && screen.orientation) {} } catch (e) {}
+      const body = ov.querySelector("#sp-present-body");
+      const setZ = (v) => { z = Math.max(1, Math.min(3.2, v)); body.style.zoom = z; };
+      ov.querySelector("#sp-pzmore").onclick = () => setZ(z + 0.2);
+      ov.querySelector("#sp-pzless").onclick = () => setZ(z - 0.2);
+      const close = () => { try { document.fullscreenElement && document.exitFullscreen(); } catch (e) {} ov.remove(); document.removeEventListener("keydown", onKey); };
+      ov.querySelector("#sp-pclose").onclick = close;
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+    };
     window._spDelNote = () => {
       const earned = folder.kind === "sermon" ? 20 : folder.kind === "devotional" ? (note.completions || []).length * 15 : 0;
       if (!askDelete(note.title || "nota", earned, "espiritual")) return;
