@@ -1228,6 +1228,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function areaOptions(sel) {
     return Object.entries(ATTRS).map(([k, a]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${a.name}</option>`).join("");
   }
+  // remove da Linha do Tempo os registros ligados a um item (por nome)
+  function removeTimelineByName(name) {
+    const nm = (name || "").trim(); if (nm.length < 2) return;
+    storage_default.update("timeline", (t) => (t || []).filter((r) => { const x = r.text || ""; return !(x.endsWith(": " + nm) || x.startsWith(nm + ":") || x === nm); }));
+  }
   function askDelete(label, earnedXP, area) {
     if (!confirm(`Deseja mesmo excluir "${label}"?`)) return false;
     if (earnedXP && earnedXP > 0) {
@@ -1236,6 +1241,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         addXP(-earnedXP, ATTRS[area] ? area : "mente");
       }
     }
+    removeTimelineByName(label);
     return true;
   }
   function tlIcon(rec) {
@@ -2686,7 +2692,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           checkStreak();
           addXP(10, "mente");
           logTimeline("mente", "✓", "Atividade conclu\xEDda: " + itemText, null);
-        } else addXP(-10, "mente");
+        } else { addXP(-10, "mente"); removeTimelineByName(itemText); }
         renderPanels();
         renderDateList();
       };
@@ -2722,6 +2728,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (confirm(`Este item j\xE1 tinha gerado 10 XP e \u{1FA99}5. Deseja remover esses pontos tamb\xE9m?`)) {
             addXP(-10, "mente");
           }
+          removeTimelineByName(item.text);
         }
         renderPanels();
       };
@@ -7165,7 +7172,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         return ns;
       });
       if (now) { checkStreak(); addXP(10, "mente"); logTimeline("mente", "✓", "Atividade conclu\xEDda: " + itemText, null); }
-      else { addXP(-10, "mente"); }
+      else { addXP(-10, "mente"); removeTimelineByName(itemText); }
       renderDashboard2();
     };
     window._trilhaDone = (id) => {
