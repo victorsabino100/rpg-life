@@ -1223,19 +1223,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   // Linha do Tempo: casa registros ligados a um item (por nome)
   function _tlMatch(x, nm) { return x.endsWith(": " + nm) || x.startsWith(nm + ":") || x === nm; }
-  function timelineHas(name) {
-    const nm = (name || "").trim(); if (nm.length < 2) return false;
-    return (storage_default.get("timeline") || []).some((r) => _tlMatch(r.text || "", nm));
+  function _tlHit(r, nm, ref) { return (ref && r.meta && r.meta.ref === ref) || (nm.length >= 2 && _tlMatch(r.text || "", nm)); }
+  function timelineHas(name, ref) {
+    const nm = (name || "").trim(); if (nm.length < 2 && !ref) return false;
+    return (storage_default.get("timeline") || []).some((r) => _tlHit(r, nm, ref));
   }
-  function removeTimelineByName(name) {
-    const nm = (name || "").trim(); if (nm.length < 2) return;
-    storage_default.update("timeline", (t) => (t || []).filter((r) => !_tlMatch(r.text || "", nm)));
+  function removeTimelineByName(name, ref) {
+    const nm = (name || "").trim(); if (nm.length < 2 && !ref) return;
+    storage_default.update("timeline", (t) => (t || []).filter((r) => !_tlHit(r, nm, ref)));
   }
   // Pergunta (só se houver registro) se deve remover da Linha do Tempo
-  function askRemoveTimeline(name) {
-    if (timelineHas(name) && confirm(`"${name}" tem registro na Linha do Tempo. Deseja remover de l\xE1 tamb\xE9m?`)) removeTimelineByName(name);
+  function askRemoveTimeline(name, ref) {
+    if (timelineHas(name, ref) && confirm(`"${name}" tem registro na Linha do Tempo. Deseja remover de l\xE1 tamb\xE9m?`)) removeTimelineByName(name, ref);
   }
-  function askDelete(label, earnedXP, area) {
+  function askDelete(label, earnedXP, area, ref) {
     if (!confirm(`Deseja mesmo excluir "${label}"?`)) return false;
     if (earnedXP && earnedXP > 0) {
       const coins = Math.ceil(earnedXP / COIN_RATE);
@@ -1243,7 +1244,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         addXP(-earnedXP, ATTRS[area] ? area : "mente");
       }
     }
-    askRemoveTimeline(label);
+    askRemoveTimeline(label, ref);
     return true;
   }
   function tlIcon(rec) {
@@ -6884,7 +6885,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       const f = storage_default.get("spiritual").folders.find((x) => x.id === st.folderId); if (!f) return;
       const id = "n" + Date.now();
       storage_default.update("spiritual", (s) => { const ff = s.folders.find((x) => x.id === st.folderId); ff.notes = ff.notes || []; ff.notes.unshift({ id, title: "", html: "", createdAt: Date.now(), completions: [] }); return s; });
-      if (f.kind === "sermon") { addXP(20, "espiritual"); logTimeline("espiritual", "\u{1F4D6}", "Novo esbo\xE7o de prega\xE7\xE3o", { folder: f.name }); celebrate("\u{1F4D6} Novo esbo\xE7o! +20 XP Espiritual"); }
+      if (f.kind === "sermon") { addXP(20, "espiritual"); logTimeline("espiritual", "\u{1F4D6}", "Novo esbo\xE7o de prega\xE7\xE3o", { folder: f.name, ref: id }); celebrate("\u{1F4D6} Novo esbo\xE7o! +20 XP Espiritual"); }
       st.noteId = id; renderEspiritual(container);
     };
     renderSpEditor(folder, note, container);
@@ -6948,7 +6949,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
     window._spDelNote = () => {
       const earned = folder.kind === "sermon" ? 20 : folder.kind === "devotional" ? (note.completions || []).length * 15 : 0;
-      if (!askDelete(note.title || "nota", earned, "espiritual")) return;
+      if (!askDelete(note.title || "nota", earned, "espiritual", note.id)) return;
       storage_default.update("spiritual", (s) => { const f = s.folders.find((x) => x.id === st.folderId); if (f) f.notes = f.notes.filter((x) => x.id !== note.id); return s; });
       st.noteId = null; renderEspiritual(container);
     };
@@ -6962,7 +6963,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         else { n.completions.push(today); added = true; }
         return s;
       });
-      if (added) { addXP(15, "espiritual"); logTimeline("espiritual", "\u{1F64F}", "Devocional conclu\xEDdo" + (note.title ? ": " + note.title : ""), null); checkStreak(); celebrate("\u{1F64F} Devocional conclu\xEDdo! +15 XP"); }
+      if (added) { addXP(15, "espiritual"); logTimeline("espiritual", "\u{1F64F}", "Devocional conclu\xEDdo" + (note.title ? ": " + note.title : ""), { ref: note.id }); checkStreak(); celebrate("\u{1F64F} Devocional conclu\xEDdo! +15 XP"); }
       else { addXP(-15, "espiritual"); }
       renderEspiritual(container);
     };
