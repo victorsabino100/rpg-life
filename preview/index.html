@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>⚔️ RPG Life</title>
+  <title>RPG Life</title>
   <!-- PWA / instalável como app -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0A0F1C">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=6">
-  <link rel="apple-touch-icon" href="icons/icon-180.png?v=6">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=7">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png?v=7">
+  <link rel="apple-touch-icon" href="icons/icon-180.png?v=7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -937,7 +938,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
 (function(){
   try{
     if(localStorage.getItem('rpgx_char')) return;
-    var t="2026-07-13";
+    var t="2026-07-14";
     var S=function(k,v){localStorage.setItem(k,JSON.stringify(v));};
     S('rpgx_char',{name:'Aventureiro',emoji:'🧙',totalXP:65,coins:29,workCoins:12,level:1,attrs:{saude:{xp:20,level:2},mente:{xp:15,level:1},riqueza:{xp:10,level:1},relacionamentos:{xp:8,level:1},carreira:{xp:7,level:1},espiritual:{xp:5,level:1}},achievements:['first_task'],streak:3,lastActive:new Date().toDateString(),avatar:{skin:'#EBB58E',hair:'curto',hairColor:'#3a2a20'}});
     S('rpgx_tasks',[{id:'t1',name:'Meditar 15 minutos',area:'mente',xp:25,done:true,date:new Date().toDateString()},{id:'t2',name:'Treino de força',area:'saude',xp:50,done:false,date:new Date().toDateString()},{id:'t3',name:'Ler 20 páginas',area:'mente',xp:25,done:false,date:new Date().toDateString()},{id:'t4',name:'Ligar para cliente',area:'carreira',xp:25,done:false,date:new Date().toDateString()}]);
