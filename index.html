@@ -886,12 +886,14 @@ html[data-theme="dark"] .levelup-card button { background: var(--primary); }
 .rv-bills-more { font-size:11px; color:var(--muted); margin-top:8px; }
 .rv-bills-total { display:flex; justify-content:space-between; align-items:center; margin-top:11px; padding-top:10px; border-top:1px dashed var(--border); font-size:12px; color:var(--muted); }
 .rv-bills-total b { font-family:var(--font-mono); font-size:14px; color:var(--red); }
-.rv-idea { cursor:default; }
-.rv-idea:hover { transform:none; border-color:var(--border); }
+.rv-idea { cursor:pointer; }
 .rv-idea-row { display:flex; gap:6px; margin-top:8px; }
 .rv-idea-row input { flex:1; min-width:0; border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-size:13px; background:var(--surface2); }
 .rv-idea-row button { border:none; background:var(--navy); color:#fff; border-radius:10px; width:36px; flex-shrink:0; cursor:pointer; font-size:16px; }
+.rv-idea-fake { margin-top:8px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; color:var(--muted); font-size:13px; background:var(--surface2); }
 .rv-idea-hint { font-size:11px; color:var(--muted); margin-top:7px; font-style:italic; }
+.rv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; align-items:start; margin-top:4px; }
+.rv-grid .trilha-side-label, .rv-grid .rv-mini { grid-column:1/-1; }
 .rv-mini { display:flex; gap:8px; }
 .rv-mini > div { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:11px 8px; text-align:center; }
 @media (max-width:820px){ .trilha-wrap{ flex-direction:column; } .trilha-side{ width:100%; } .trilha-greet{ font-size:23px; } }
@@ -3424,6 +3426,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <option value="3">3</option>
         </select>
         <button onmousedown="event.preventDefault()" onclick="knBold()" title="Negrito" style="font-weight:800;min-width:34px">B</button>
+        <span style="width:1px;height:22px;background:var(--border);margin:0 3px;align-self:center"></span>
+        <span title="Marca-texto" style="align-self:center;font-size:13px;color:var(--muted);margin-right:1px">🖍</span>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="knHilite('#FFE08A')" title="Marcar amarelo" style="background:#FFE08A"></button>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="knHilite('#B6E8B6')" title="Marcar verde" style="background:#B6E8B6"></button>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="knHilite('#AFD7F5')" title="Marcar azul" style="background:#AFD7F5"></button>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="knHilite('#F5B8D0')" title="Marcar rosa" style="background:#F5B8D0"></button>
+        <button class="note-hilite-sw clear" onmousedown="event.preventDefault()" onclick="knHilite('transparent')" title="Remover marcação"></button>
        </div>
        <div class="note-rich" id="kn-content" contenteditable="true" data-placeholder="Escreva aqui... Use [[nome da nota]] para criar links entre notas \xB7 #tag para categorizar"></div>
        <div style="font-size:11px;color:var(--muted);margin-top:6px">\u{1F4A1} Digite <b>[[</b> para conectar outra nota (autocompletar) \xB7 #tag para categorizar</div>` : `<div class="knowledge-rendered" id="kn-rendered">${note.contentHtml ? renderRichPreview(note.contentHtml) : renderContent2(note.content)}</div>`}
@@ -3541,10 +3550,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         document.execCommand("bold");
         window._knSaveRange(); saveKn();
       };
+      window.knHilite = (color) => {
+        const e = document.getElementById("kn-content"); if (!e) return; e.focus();
+        const sel = window.getSelection();
+        if ((!sel.rangeCount || !e.contains(sel.anchorNode)) && window._knLastRange) { sel.removeAllRanges(); sel.addRange(window._knLastRange); }
+        if (!sel.rangeCount || sel.isCollapsed) { showToast("Selecione um trecho para marcar"); return; }
+        try { document.execCommand("styleWithCSS", false, true); } catch (er) {}
+        try { document.execCommand("hiliteColor", false, color); } catch (er) { document.execCommand("backColor", false, color); }
+        window._knSaveRange(); saveKn();
+      };
 
       ed.addEventListener("blur", () => saveKn());
       ed.addEventListener("keyup", () => { window._knSaveRange(); window.knDetectSize(); });
       ed.addEventListener("mouseup", () => { window._knSaveRange(); setTimeout(() => window.knDetectSize(), 0); });
+      if (window._wireAutoList) window._wireAutoList(ed, saveKn);
       setTimeout(() => window.knDetectSize(), 0);
 
       let _acDD = document.getElementById("kn-ac"); if (_acDD) _acDD.remove();
@@ -6549,6 +6568,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <option value="3">3</option>
       </select>
       <button onmousedown="event.preventDefault()" onclick="window._richBold('${id}')" title="Negrito" style="font-weight:800;min-width:34px">B</button>
+      <span style="width:1px;height:22px;background:var(--border);margin:0 3px;align-self:center"></span>
+      <span title="Marca-texto" style="align-self:center;font-size:13px;color:var(--muted);margin-right:1px">🖍</span>
+      <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="window._richHilite('${id}','#FFE08A')" title="Marcar amarelo" style="background:#FFE08A"></button>
+      <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="window._richHilite('${id}','#B6E8B6')" title="Marcar verde" style="background:#B6E8B6"></button>
+      <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="window._richHilite('${id}','#AFD7F5')" title="Marcar azul" style="background:#AFD7F5"></button>
+      <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="window._richHilite('${id}','#F5B8D0')" title="Marcar rosa" style="background:#F5B8D0"></button>
+      <button class="note-hilite-sw clear" onmousedown="event.preventDefault()" onclick="window._richHilite('${id}','transparent')" title="Remover marcação"></button>
     </div>`;
   }
   window._richSaveRange = (id) => { const e = richGet(id); if (!e) return; const s = window.getSelection(); if (s && s.rangeCount && e.contains(s.anchorNode)) window._richRanges[id] = s.getRangeAt(0).cloneRange(); };
@@ -6594,6 +6620,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const sel = window.getSelection();
     if ((!sel.rangeCount || !e.contains(sel.anchorNode)) && window._richRanges[id]) { sel.removeAllRanges(); sel.addRange(window._richRanges[id]); }
     document.execCommand("bold");
+    window._richSaveRange(id); if (window._richCbs[id]) window._richCbs[id]();
+  };
+  window._richHilite = (id, color) => {
+    const e = richGet(id); if (!e) return; e.focus();
+    const sel = window.getSelection();
+    if ((!sel.rangeCount || !e.contains(sel.anchorNode)) && window._richRanges[id]) { sel.removeAllRanges(); sel.addRange(window._richRanges[id]); }
+    if (!sel.rangeCount || sel.isCollapsed) { showToast("Selecione um trecho para marcar"); return; }
+    try { document.execCommand("styleWithCSS", false, true); } catch (er) {}
+    try { document.execCommand("hiliteColor", false, color); } catch (er) { document.execCommand("backColor", false, color); }
     window._richSaveRange(id); if (window._richCbs[id]) window._richCbs[id]();
   };
   // Limpa texto colado: remove fundo/cor/fonte e mapeia tamanhos pro sistema (Título=3, Subtítulo=2, Corpo=1)
@@ -7223,17 +7258,17 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         ${radarSVG}
       </div>
     </div>
-    <div class="trilha-wrap">
+    <div class="trilha-wrap" style="flex-direction:column;align-items:stretch">
       <div class="trilha-main">
         <div class="trilha-head">
           <div><div class="trilha-greet-sub">${dateLabel}</div><div class="trilha-greet">${greetWord}, ${esc(char.name)}.</div></div>
           <div class="trilha-streak"><span class="tl-fire">\u{1F525}</span> ${char.streak} dias</div>
         </div>
-        <div class="trilha-progressline" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span>${done} de ${tasks.length} feitos · foque em só 3 hoje</span><button onclick="window._focoMode()" style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:8px;padding:5px 10px;cursor:pointer;flex-shrink:0">◉ Modo Foco</button></div>
+        <div class="trilha-progressline" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span>${done} de ${tasks.length} feitos · máx. 3 metas do dia</span><button onclick="window._focoMode()" style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:8px;padding:5px 10px;cursor:pointer;flex-shrink:0">◉ Modo Foco</button></div>
         <div class="tl-track"><div class="tl-rail"></div><div class="tl-rail-fill" style="height:${pathPct}%"></div>${timelineHTML}</div>
-        <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:8px" onclick="window._openAddTask()">+ novo passo</button>
+        <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-top:8px" onclick="window._openAddTask()">+ nova meta</button>
       </div>
-      <div class="trilha-side">
+      <div class="rv-grid">
         <div class="trilha-side-label">Resto da vida \u2014 1 toque</div>
         ${_upBills.length ? `<div class="rv-card rv-bills" onclick="window._navSection('financas')">
           <div class="rv-bills-head"><span class="rv-bills-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>A pagar em at\xE9 5 dias</div>
@@ -7245,10 +7280,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <div class="rv-card" onclick="window._navSection('comercial')"><div class="rv-k">Comercial</div><div class="rv-v">${crmD.leads.length} <span class="rv-u">leads</span></div></div>
         <div class="rv-card" onclick="window._navSection('agenda')"><div class="rv-k">Pr\xF3ximo compromisso</div><div class="rv-v-sm">${nextEv ? (nextEv.allDay ? "dia" : nextEv.time || "--:--") + " \u2014 " + esc(nextEv.name) : "Nada hoje"}</div></div>
         ${readingBook ? `<div class="rv-card rv-accent" onclick="window._navSection('biblioteca')"><div class="rv-k">Lendo agora</div><div class="rv-v-sm" style="color:#fff">${esc(readingBook.title)}</div><div class="rv-bar"><div class="rv-bar-fill" style="width:${readingBook.progress || 0}%"></div></div></div>` : ""}
-        <div class="rv-card rv-idea">
+        <div class="rv-card rv-idea" onclick="window._openIdeaPopup()">
           <div class="rv-k">Caixa de ideias</div>
-          <div class="rv-idea-row"><input id="trilha-idea" placeholder="Tire da cabe\xE7a\u2026" onkeydown="if(event.key==='Enter')window._trilhaAddIdea()"><button onclick="window._trilhaAddIdea()">+</button></div>
-          <div class="rv-idea-hint">Vira nota no Insights \u00b7 use #tags</div>
+          <div class="rv-idea-fake">Tire da cabe\xE7a\u2026</div>
+          <div class="rv-idea-hint">Abre uma nota \u00b7 salva no Brain \u203a Insights</div>
         </div>
         <div class="rv-mini">
           <div><div class="rv-k">Miss\xF5es</div><div class="rv-v-sm">${done}/${tasks.length}</div></div>
@@ -7307,6 +7342,30 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       if (t) { t.textContent = "\u{1F4A1} Ideia salva no Insights!"; t.classList.remove("hidden"); clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.add("hidden"), 1600); }
       renderDashboard2();
     };
+    window._openIdeaPopup = () => {
+      window._modalContent(`
+      <div class="modal-title">\u{1F4A1} Nova ideia</div>
+      <div class="form-group"><label>T\xEDtulo (opcional)</label><input id="idea-title" placeholder="Um nome pra ideia…"></div>
+      <div class="form-group"><label>Anota\xE7\xE3o</label>
+        <textarea id="idea-body" placeholder="Escreva livremente… use #tag para categorizar e [[nota]] para conectar a outra nota do Brain" style="min-height:240px;resize:vertical;line-height:1.5;font-size:15px"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">\u{1F4A1} Salva no Brain › Insights. Conecta pelas #tags e [[links]] que voc\xEA usar.</div>
+      <button class="btn btn-primary" style="width:100%" onclick="window._saveIdeaPopup()">\u{1F4BE} Salvar no Brain</button>
+    `);
+      setTimeout(() => { const b = document.getElementById("idea-body"); if (b) b.focus(); }, 60);
+    };
+    window._saveIdeaPopup = () => {
+      const bodyEl = document.getElementById("idea-body"); if (!bodyEl) return;
+      const body = bodyEl.value.trim(); if (!body) { showToast("Escreva algo antes de salvar."); return; }
+      const titleIn = (document.getElementById("idea-title").value || "").trim();
+      const tags = [...new Set([...body.matchAll(/#([\p{L}0-9_-]+)/gu)].map((m) => m[1]))];
+      const clean = body.replace(/#[\p{L}0-9_-]+/gu, "").trim() || body;
+      const title = titleIn || (clean.length > 52 ? clean.slice(0, 52) + "…" : clean);
+      storage_default.update("knowledge", (ks) => { const arr = ks || []; arr.push({ id: "i" + Date.now(), title, content: body, tags, created: Date.now(), updatedAt: (/* @__PURE__ */ new Date()).toISOString() }); return arr; });
+      window._closeModal();
+      showToast("\u{1F4A1} Ideia salva no Brain › Insights!");
+      renderDashboard2();
+    };
   }
   function fmtMoney(n) {
     return "R$ " + (n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -7356,6 +7415,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     return { facil: "green", medio: "gold", dificil: "red", epico: "purple" }[d] || "blue";
   }
   window._openAddTask = () => {
+    const _todayDS = (/* @__PURE__ */ new Date()).toDateString();
+    const _todayActive = (storage_default.get("tasks") || []).filter((t) => (t.date || _todayDS) === _todayDS && !t.done).length;
+    if (_todayActive >= 3) { showToast("Foque em só 3 metas do dia — conclua ou remova uma antes."); return; }
     const attrOpts = Object.entries(ATTRS).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join("");
     const xpMap = { facil: 10, medio: 25, dificil: 50, epico: 100 };
     window._modalContent(`
