@@ -31,17 +31,14 @@ function fixStyles(root){
   var els=root.querySelectorAll?root.querySelectorAll('[style]'):[];
   for(var i=0;i<els.length;i++)fixEl(els[i]);
 }
-function stripEmoji(node){
-  var w=document.createTreeWalker(node,NodeFilter.SHOW_TEXT),t;
-  while(t=w.nextNode()){EMOJI.lastIndex=0;
-    if(EMOJI.test(t.nodeValue)){EMOJI.lastIndex=0;t.nodeValue=t.nodeValue.replace(EMOJI,function(c){return (window._EIC&&window._EIC[c])?c:''})}}
-}
-function run(root){root=root||document.body;if(!root)return;fixStyles(root);stripEmoji(root)}
+/* Remoção de emojis DESATIVADA: muitos ícones do app (conquistas, botões, patentes,
+   recompensas) são emojis; removê-los deixava botões vazios. Mantemos os emojis. */
+function stripEmoji(node){}
+function run(root){root=root||document.body;if(!root)return;fixStyles(root)}
 new MutationObserver(function(ms){
   for(var i=0;i<ms.length;i++)for(var j=0;j<ms[i].addedNodes.length;j++){
     var n=ms[i].addedNodes[j];
     if(n.nodeType===1)run(n);
-    else if(n.nodeType===3){EMOJI.lastIndex=0;if(EMOJI.test(n.nodeValue)){EMOJI.lastIndex=0;n.nodeValue=n.nodeValue.replace(EMOJI,function(c){return (window._EIC&&window._EIC[c])?c:''})}}
   }
 }).observe(document.documentElement,{childList:true,subtree:true});
 if(document.readyState!=='loading')run();else document.addEventListener('DOMContentLoaded',function(){run()});
