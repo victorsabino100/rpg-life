@@ -2081,9 +2081,23 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (li && li.tagName === "LI" && li.textContent.replace(/​/g, "").trim() === "") {
             e.preventDefault();
             var list = li.parentElement;
-            var cmd = list && list.tagName === "OL" ? "insertOrderedList" : "insertUnorderedList";
-            try { document.execCommand(cmd); } catch (er) {}
-            if (li.parentElement && li.parentElement.tagName === "LI") { try { document.execCommand("outdent"); } catch (er2) {} }
+            var newBlock = document.createElement("div");
+            newBlock.appendChild(document.createElement("br"));
+            // itens que vêm DEPOIS do vazio: viram uma nova lista abaixo (divide a lista)
+            var after = [], sib = li.nextElementSibling;
+            while (sib) { after.push(sib); sib = sib.nextElementSibling; }
+            if (list.parentNode) list.parentNode.insertBefore(newBlock, list.nextSibling);
+            if (after.length) {
+              var newList = document.createElement(list.tagName);
+              after.forEach(function (x) { newList.appendChild(x); });
+              if (newBlock.parentNode) newBlock.parentNode.insertBefore(newList, newBlock.nextSibling);
+            }
+            li.remove();
+            if (!list.querySelector("li")) list.remove();
+            var rr = document.createRange();
+            rr.setStart(newBlock, 0); rr.collapse(true);
+            var ss = window.getSelection(); ss.removeAllRanges(); ss.addRange(rr);
+            ed.focus();
             if (typeof save === "function") save();
             return;
           }
