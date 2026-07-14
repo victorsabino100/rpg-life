@@ -4362,7 +4362,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div class="card-title" style="margin:0">\u{1F4B3} Cart\xF5es de Cr\xE9dito</div>
-        <button class="btn btn-primary btn-sm" onclick="window._openFinAdd('card')">+ Cart\xE3o</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="window._importStatement('')">⬆ Importar extrato</button>
+          <button class="btn btn-primary btn-sm" onclick="window._openFinAdd('card')">+ Cart\xE3o</button>
+        </div>
       </div>
       <div class="cards-grid">
         ${cards.map((c) => {
@@ -4387,6 +4390,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     }).join("")}
       </div>
       ${!cards.length ? '<div class="empty-state" style="padding:24px">Nenhum cart\xE3o cadastrado.</div>' : ""}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);text-align:right">
+        <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearFinances()">\u{1F5D1} Limpar todos os dados financeiros</button>
+      </div>
     </div>
     ${cards.map((c) => renderCardStatement(c)).join("")}
   `;
@@ -4494,6 +4500,18 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     if (SUBSCRIPTION_KW.some((k) => d.includes(k))) return "fixed";
     return "variable";
   }
+  window._clearFinances = () => {
+    if (!confirm("Isto apaga TODOS os lan\xE7amentos financeiros: gastos fixos, vari\xE1veis, d\xEDvidas, entradas e economias.\n\nOs cart\xF5es cadastrados s\xE3o mantidos para voc\xEA importar os extratos.\n\nDeseja continuar?")) return;
+    if (!confirm("Tem certeza? Esta a\xE7\xE3o n\xE3o pode ser desfeita.")) return;
+    storage_default.update("finance", (f) => {
+      f.fixedExpenses = []; f.variableExpenses = []; f.debts = []; f.incomes = [];
+      f.savings = []; f.savingGoals = []; f.savingsGoals = [];
+      return f;
+    });
+    if (typeof renderFinContent === "function") renderFinContent();
+    const t = document.getElementById("xp-toast");
+    if (t) { t.textContent = "\u{1F9F9} Lan\xE7amentos financeiros limpos"; t.classList.remove("hidden"); clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.add("hidden"), 3e3); }
+  };
   function parseStatementText(text) {
     if (!text) return [];
     const out = [];
@@ -4527,9 +4545,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function openStatementPreview() {
     const rows = _stmtBuffer || [];
     const catLabel = { fixed: "Custo fixo", variable: "Vari\xE1vel", debt: "D\xEDvida" };
+    const _card = (storage_default.get("finance").creditCards || []).find((c) => c.id === _stmtCardId);
     window._modalContent(`
-      <div class="modal-title">\u2B06 Importar fatura \u2014 revis\xE3o</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${rows.length} lan\xE7amento(s) detectado(s). Classificamos automaticamente \u2014 ajuste o que precisar antes de confirmar.</div>
+      <div class="modal-title">\u2B06 Importar extrato \u2014 revis\xE3o</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">${rows.length} lan\xE7amento(s) detectado(s)${_card ? ` \xB7 cart\xE3o <b style="color:var(--text)">${esc(_card.name)}</b>` : " \xB7 sem cart\xE3o"}. Classificamos automaticamente \u2014 ajuste o que precisar antes de confirmar.</div>
       ${rows.length ? `<div style="max-height:52vh;overflow-y:auto;border:1px solid var(--border);border-radius:12px">
         <table class="fin-table" style="margin:0">
           <thead><tr><th style="width:26px"></th><th>Descri\xE7\xE3o</th><th>Data</th><th style="text-align:right">Valor</th><th>Classifica\xE7\xE3o</th></tr></thead>
@@ -4555,10 +4574,18 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   function bindStatementImport() {
     window._importStatement = (cardId) => {
-      _stmtCardId = cardId;
+      _stmtCardId = cardId || "";
+      const _cards = (storage_default.get("finance").creditCards || []);
+      const _cardSel = `<div class="form-group" style="margin-bottom:14px"><label>De qual cart\xE3o \xE9 este extrato?</label>
+        <select id="stmt-card">
+          <option value="">\u2014 Sem cart\xE3o espec\xEDfico \u2014</option>
+          ${_cards.map((c) => `<option value="${c.id}" ${c.id === _stmtCardId ? "selected" : ""}>${esc(c.name)}${c.lastDigits ? " \u00B7\u00B7\u00B7\u00B7 " + c.lastDigits : ""}</option>`).join("")}
+        </select>
+        ${_cards.length ? "" : `<small style="color:var(--muted);font-size:11px">Nenhum cart\xE3o cadastrado \u2014 os lan\xE7amentos entram sem cart\xE3o. Cadastre um em "+ Cart\xE3o".</small>`}</div>`;
       window._modalContent(`
-        <div class="modal-title">\u2B06 Importar fatura</div>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Envie o arquivo da fatura (CSV, OFX ou TXT) ou cole o texto dos lan\xE7amentos. Classificamos parcelados como <b>d\xEDvida</b>, assinaturas/recorr\xEAncias como <b>custo fixo</b> e o resto como <b>vari\xE1vel</b>.</div>
+        <div class="modal-title">\u2B06 Importar extrato / fatura</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Escolha o cart\xE3o e envie o arquivo (CSV, OFX, TXT) ou cole o texto. Classificamos <b>parcelado \u2192 d\xEDvida</b>, <b>assinatura/recorr\xEAncia \u2192 custo fixo</b> e <b>compra espor\u00E1dica \u2192 vari\xE1vel</b> \u2014 revise antes de confirmar.</div>
+        ${_cardSel}
         <label class="stmt-drop" for="stmt-file">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
           <span>Clique para escolher o arquivo</span>
@@ -4578,6 +4605,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           const file = e.target.files[0];
           if (!file) return;
           const reader = new FileReader();
+          const _cs = document.getElementById("stmt-card"); if (_cs) _stmtCardId = _cs.value;
           reader.onload = () => {
             let txt = String(reader.result || "");
             if (file.name.toLowerCase().endsWith(".pdf")) txt = extractPdfText(txt);
@@ -4589,6 +4617,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       }, 60);
     };
     window._processStatementPaste = () => {
+      const _cs = document.getElementById("stmt-card"); if (_cs) _stmtCardId = _cs.value;
       const txt = document.getElementById("stmt-paste")?.value || "";
       _stmtBuffer = parseStatementText(txt);
       openStatementPreview();
