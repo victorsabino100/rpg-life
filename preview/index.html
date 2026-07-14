@@ -456,6 +456,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .note-hilite-sw { width:20px; height:20px; padding:0 !important; border-radius:5px !important; border:1px solid var(--border) !important; cursor:pointer; }
 .note-hilite-sw.clear { background:var(--surface2); position:relative; }
 .note-hilite-sw.clear:before { content:"⦸"; font-size:13px; color:var(--muted); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+#sel-toolbar { position:fixed; z-index:600; display:none; align-items:center; gap:3px; padding:5px 7px; border-radius:12px; background:color-mix(in srgb, var(--surface) 78%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid var(--border); box-shadow:0 10px 30px rgba(0,0,0,.24); animation:selbarIn .12s ease; }
+#sel-toolbar.show { display:flex; }
+@keyframes selbarIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+#sel-toolbar button { background:transparent; border:none; color:var(--text); cursor:pointer; border-radius:7px; padding:4px 8px; font-family:var(--font-body); line-height:1; display:inline-flex; align-items:center; justify-content:center; transition:background .12s ease; }
+#sel-toolbar button:hover { background:var(--surface2); }
+#sel-toolbar .sel-sep { width:1px; height:20px; background:var(--border); margin:0 3px; flex:none; }
+#sel-toolbar .sel-sw { width:19px; height:19px; padding:0; border-radius:5px; border:1px solid rgba(0,0,0,.18); }
+#sel-toolbar .sel-sw.clear { background:var(--surface2); font-size:12px; color:var(--muted); }
 
 /* ================= CHECKLIST ================= */
 .checklist-item { display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:4px; margin-bottom:5px; background:var(--surface2); transition:all .15s ease; }
@@ -2157,6 +2165,62 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       if (typeof save === "function") save();
     });
   };
+  // Barra flutuante de formatação: aparece ao selecionar texto em qualquer editor de nota.
+  function setupSelToolbar() {
+    if (document.getElementById("sel-toolbar")) return;
+    var bar = document.createElement("div");
+    bar.id = "sel-toolbar";
+    var sw = function (c, t) { return '<button class="sel-sw" title="' + t + '" style="background:' + c + '" onmousedown="event.preventDefault()" onclick="window._selFmt(\'hilite\',\'' + c + '\')"></button>'; };
+    bar.innerHTML =
+      '<button title="Corpo" style="font-size:12px" onmousedown="event.preventDefault()" onclick="window._selFmt(\'size\',1)">A</button>' +
+      '<button title="Subtítulo" style="font-size:15px;font-weight:700" onmousedown="event.preventDefault()" onclick="window._selFmt(\'size\',2)">A</button>' +
+      '<button title="Título" style="font-size:18px;font-weight:800" onmousedown="event.preventDefault()" onclick="window._selFmt(\'size\',3)">A</button>' +
+      '<span class="sel-sep"></span>' +
+      '<button title="Negrito" style="font-weight:800;font-size:14px" onmousedown="event.preventDefault()" onclick="window._selFmt(\'bold\')">B</button>' +
+      '<span class="sel-sep"></span>' +
+      sw("#FFE08A", "Amarelo") + sw("#B6E8B6", "Verde") + sw("#AFD7F5", "Azul") + sw("#F5B8D0", "Rosa") +
+      '<button class="sel-sw clear" title="Remover marcação" onmousedown="event.preventDefault()" onclick="window._selFmt(\'hilite\',\'transparent\')">⊘</button>';
+    document.body.appendChild(bar);
+    function activeEditor() {
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return null;
+      var n = sel.anchorNode;
+      while (n && n !== document.body) { if (n.classList && n.classList.contains("note-rich") && n.isContentEditable) return n; n = n.parentElement; }
+      return null;
+    }
+    window._selFmt = function (action, arg) {
+      var ed = activeEditor(); if (!ed) return;
+      var id = ed.id;
+      try {
+        if (id === "note-rich") { if (action === "size") window.noteSize(arg); else if (action === "bold") window.noteBold(); else window.noteHilite(arg); }
+        else if (id === "kn-content") { if (action === "size") window.knSize(arg); else if (action === "bold") window.knBold(); else window.knHilite(arg); }
+        else { var rid = id.replace(/-ed$/, ""); if (action === "size") window._richSize(rid, arg); else if (action === "bold") window._richBold(rid); else window._richHilite(rid, arg); }
+      } catch (e) {}
+      setTimeout(position, 0);
+    };
+    function position() {
+      var ed = activeEditor();
+      var sel = window.getSelection();
+      if (!ed || !sel || !sel.rangeCount || sel.isCollapsed) { bar.classList.remove("show"); return; }
+      var rect = sel.getRangeAt(0).getBoundingClientRect();
+      if (!rect || (!rect.width && !rect.height)) { bar.classList.remove("show"); return; }
+      bar.classList.add("show");
+      var bw = bar.offsetWidth, bh = bar.offsetHeight;
+      var top = rect.top - bh - 8;
+      if (top < 8) top = rect.bottom + 8;
+      var left = rect.left + rect.width / 2 - bw / 2;
+      left = Math.max(8, Math.min(left, window.innerWidth - bw - 8));
+      bar.style.top = top + "px";
+      bar.style.left = left + "px";
+    }
+    window._selReposition = position;
+    var t;
+    document.addEventListener("selectionchange", function () { clearTimeout(t); t = setTimeout(position, 50); });
+    document.addEventListener("scroll", function () { if (bar.classList.contains("show")) position(); }, true);
+    window.addEventListener("resize", position);
+    document.addEventListener("mousedown", function (e) { if (bar.contains(e.target)) return; setTimeout(position, 0); });
+  }
+  setupSelToolbar();
   function flowsGet() { const f = storage_default.get("flows"); return f && Array.isArray(f.items) ? f : { items: [] }; }
   function flowsSave(f) { storage_default.set("flows", f); }
   function flowCur() { return flowsGet().items.find((x) => x.id === flowState.openId) || null; }
