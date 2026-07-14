@@ -302,10 +302,9 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
 .empty-state .empty-icon { font-size: 42px; margin-bottom: 12px; opacity: .8; }
 
-::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; border: 2px solid var(--bg); }
-::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; }
+* { scrollbar-width: none; -ms-overflow-style: none; }
 
 .tag { display: inline-block; padding: 3px 9px; background: var(--surface2); border: 1px solid var(--border); border-radius: 100px; font-size: 11px; color: var(--muted); cursor: pointer; margin: 2px; transition: all .15s ease; }
 .tag:hover { border-color: var(--primary); color: var(--primary); }
@@ -448,9 +447,15 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .note-size-select { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:7px; padding:5px 6px 5px 9px; font-size:13px; font-family:var(--font-body); cursor:pointer; width:52px; outline:none; transition:border-color .15s ease; }
 .note-size-select:hover, .note-size-select:focus { border-color:var(--primary); }
 .note-textarea { flex:1; font-family:var(--font-body); font-size:15px; line-height:1.7; min-height:280px; }
-.note-rich { flex:1; font-family:var(--font-body); font-size:15px; line-height:1.7; min-height:60vh; overflow-y:auto; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface2); color:var(--text); outline:none; transition:border-color .15s ease; white-space:pre-wrap; }
+.note-rich { flex:1; font-family:var(--font-body); font-size:15px; line-height:1.4; min-height:60vh; overflow-y:auto; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface2); color:var(--text); outline:none; transition:border-color .15s ease; white-space:pre-wrap; }
 .note-rich:focus { border-color:var(--primary); }
 .note-rich:empty:before { content: attr(data-placeholder); color: var(--muted); pointer-events:none; }
+.note-rich div { line-height:1.4; }
+.note-rich ul, .note-rich ol { margin:3px 0; padding-left:24px; }
+.note-rich li { margin:1px 0; line-height:1.4; }
+.note-hilite-sw { width:20px; height:20px; padding:0 !important; border-radius:5px !important; border:1px solid var(--border) !important; cursor:pointer; }
+.note-hilite-sw.clear { background:var(--surface2); position:relative; }
+.note-hilite-sw.clear:before { content:"⦸"; font-size:13px; color:var(--muted); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
 
 /* ================= CHECKLIST ================= */
 .checklist-item { display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:4px; margin-bottom:5px; background:var(--surface2); transition:all .15s ease; }
@@ -2080,6 +2085,40 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     try { var n = parseInt(String(hex).replace("#", ""), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
       var L = (0.299 * r + 0.587 * g + 0.114 * b) / 255; return L > 0.62 ? "#17150F" : "#fff"; } catch (e) { return "#fff"; }
   }
+  // Listas automáticas em editores contenteditable: "- " / "* " → bullet, "N. " → numerada.
+  // Enter continua o tópico; Enter numa linha vazia sai da lista (comportamento nativo do <ul>/<ol>).
+  window._wireAutoList = function (ed, save) {
+    if (!ed || ed._autoListWired) return;
+    ed._autoListWired = true;
+    ed.addEventListener("keydown", function (e) {
+      if (e.key !== " " && e.keyCode !== 32) return;
+      var sel = window.getSelection();
+      if (!sel || !sel.rangeCount || !sel.isCollapsed) return;
+      var range = sel.getRangeAt(0);
+      if (!ed.contains(range.startContainer)) return;
+      // se já está numa lista, deixa o navegador cuidar
+      var a = range.startContainer; a = a.nodeType === 3 ? a.parentElement : a;
+      while (a && a !== ed) { if (a.tagName === "LI") return; a = a.parentElement; }
+      // texto da linha atual até o cursor
+      var block = range.startContainer; if (block.nodeType === 3) block = block.parentElement;
+      while (block && block !== ed && !/^(DIV|P|LI)$/.test(block.tagName || "")) block = block.parentElement;
+      if (!block) block = ed;
+      var r = document.createRange();
+      r.selectNodeContents(block);
+      try { r.setEnd(range.startContainer, range.startOffset); } catch (err) { return; }
+      var before = r.toString();
+      var ordered = null;
+      if (before === "-" || before === "*") ordered = false;
+      else if (/^\d{1,3}\.$/.test(before)) ordered = true;
+      else return;
+      e.preventDefault();
+      sel.removeAllRanges(); sel.addRange(r);
+      document.execCommand("delete");
+      try { document.execCommand("styleWithCSS", false, false); } catch (e2) {}
+      document.execCommand(ordered ? "insertOrderedList" : "insertUnorderedList");
+      if (typeof save === "function") save();
+    });
+  };
   function flowsGet() { const f = storage_default.get("flows"); return f && Array.isArray(f.items) ? f : { items: [] }; }
   function flowsSave(f) { storage_default.set("flows", f); }
   function flowCur() { return flowsGet().items.find((x) => x.id === flowState.openId) || null; }
@@ -2864,6 +2903,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <option value="3">3</option>
         </select>
         <button onmousedown="event.preventDefault()" onclick="noteBold()" title="Negrito" style="font-weight:800;min-width:34px">B</button>
+        <span style="width:1px;height:22px;background:var(--border);margin:0 3px;align-self:center"></span>
+        <span title="Marca-texto" style="align-self:center;font-size:13px;color:var(--muted);margin-right:1px">🖍</span>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="noteHilite('#FFE08A')" title="Marcar amarelo" style="background:#FFE08A"></button>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="noteHilite('#B6E8B6')" title="Marcar verde" style="background:#B6E8B6"></button>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="noteHilite('#AFD7F5')" title="Marcar azul" style="background:#AFD7F5"></button>
+        <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="noteHilite('#F5B8D0')" title="Marcar rosa" style="background:#F5B8D0"></button>
+        <button class="note-hilite-sw clear" onmousedown="event.preventDefault()" onclick="noteHilite('transparent')" title="Remover marcação"></button>
       </div>
       <div class="note-rich" id="note-rich" contenteditable="true" data-placeholder="Escreva suas anotações do dia..."></div>
     `;
@@ -2886,6 +2932,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         ed.addEventListener("blur", () => { window._noteSaveRich(); renderDateList(); });
         ed.addEventListener("keyup", () => { window._noteSaveRange(); window.noteDetectSize(); });
         ed.addEventListener("mouseup", () => { window._noteSaveRange(); setTimeout(() => window.noteDetectSize(), 0); });
+        window._wireAutoList(ed, window._noteSaveRich);
         setTimeout(() => window.noteDetectSize(), 0);
       }
       const NOTE_SIZES = { 1: { size: "15px", weight: "400" }, 2: { size: "20px", weight: "700" }, 3: { size: "27px", weight: "800" } };
@@ -2944,6 +2991,16 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         const sel = window.getSelection();
         if ((!sel.rangeCount || !ed2.contains(sel.anchorNode)) && window._noteLastRange) { sel.removeAllRanges(); sel.addRange(window._noteLastRange); }
         document.execCommand("bold");
+        window._noteSaveRange(); window._noteSaveRich();
+      };
+      window.noteHilite = (color) => {
+        const ed2 = document.getElementById("note-rich"); if (!ed2) return;
+        ed2.focus();
+        const sel = window.getSelection();
+        if ((!sel.rangeCount || !ed2.contains(sel.anchorNode)) && window._noteLastRange) { sel.removeAllRanges(); sel.addRange(window._noteLastRange); }
+        if (!sel.rangeCount || sel.isCollapsed) { showToast("Selecione um trecho para marcar"); return; }
+        try { document.execCommand("styleWithCSS", false, true); } catch (e) {}
+        try { document.execCommand("hiliteColor", false, color); } catch (e) { document.execCommand("backColor", false, color); }
         window._noteSaveRange(); window._noteSaveRich();
       };
       window.insertNoteTemplate = () => {
@@ -6601,6 +6658,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     });
     ed.addEventListener("keyup", () => { window._richSaveRange(id); window._richDetect(id); });
     ed.addEventListener("mouseup", () => { window._richSaveRange(id); setTimeout(() => window._richDetect(id), 0); });
+    if (window._wireAutoList) window._wireAutoList(ed, cb);
     setTimeout(() => window._richDetect(id), 0);
   }
 
