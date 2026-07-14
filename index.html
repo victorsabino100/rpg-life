@@ -2071,6 +2071,25 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     if (!ed || ed._autoListWired) return;
     ed._autoListWired = true;
     ed.addEventListener("keydown", function (e) {
+      // Enter num item de lista vazio => sai da lista e volta pra linha normal
+      if ((e.key === "Enter" || e.keyCode === 13) && !e.shiftKey) {
+        var s2 = window.getSelection();
+        if (s2 && s2.rangeCount && s2.isCollapsed && ed.contains(s2.anchorNode)) {
+          var li = s2.getRangeAt(0).startContainer;
+          li = li.nodeType === 3 ? li.parentElement : li;
+          while (li && li !== ed && li.tagName !== "LI") li = li.parentElement;
+          if (li && li.tagName === "LI" && li.textContent.replace(/​/g, "").trim() === "") {
+            e.preventDefault();
+            var list = li.parentElement;
+            var cmd = list && list.tagName === "OL" ? "insertOrderedList" : "insertUnorderedList";
+            try { document.execCommand(cmd); } catch (er) {}
+            if (li.parentElement && li.parentElement.tagName === "LI") { try { document.execCommand("outdent"); } catch (er2) {} }
+            if (typeof save === "function") save();
+            return;
+          }
+        }
+        return;
+      }
       if (e.key !== " " && e.keyCode !== 32) return;
       var sel = window.getSelection();
       if (!sel || !sel.rangeCount || !sel.isCollapsed) return;
