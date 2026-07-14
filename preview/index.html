@@ -892,8 +892,10 @@ html[data-theme="dark"] .levelup-card button { background: var(--primary); }
 .rv-idea-row button { border:none; background:var(--navy); color:#fff; border-radius:10px; width:36px; flex-shrink:0; cursor:pointer; font-size:16px; }
 .rv-idea-fake { margin-top:8px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; color:var(--muted); font-size:13px; background:var(--surface2); }
 .rv-idea-hint { font-size:11px; color:var(--muted); margin-top:7px; font-style:italic; }
-.rv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; align-items:start; margin-top:4px; }
-.rv-grid .trilha-side-label, .rv-grid .rv-mini { grid-column:1/-1; }
+.rv-grid { column-width:232px; column-gap:12px; margin-top:4px; }
+.rv-grid > * { break-inside:avoid; -webkit-column-break-inside:avoid; margin-bottom:12px; width:100%; }
+.rv-grid .trilha-side-label { column-span:all; -webkit-column-span:all; margin-bottom:8px; }
+.rv-grid .rv-mini { column-span:all; -webkit-column-span:all; }
 .rv-mini { display:flex; gap:8px; }
 .rv-mini > div { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:11px 8px; text-align:center; }
 @media (max-width:820px){ .trilha-wrap{ flex-direction:column; } .trilha-side{ width:100%; } .trilha-greet{ font-size:23px; } }
@@ -7297,8 +7299,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <div class="trilha-side-label">Resto da vida \u2014 1 toque</div>
         ${_upBills.length ? `<div class="rv-card rv-bills" onclick="window._navSection('financas')">
           <div class="rv-bills-head"><span class="rv-bills-icon"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>A pagar em at\xE9 5 dias</div>
-          <div class="rv-bills-list">${_upBills.slice(0, 5).map((b) => { const n = _billDays(b.date); const ov = n <= 1; return `<div class="rv-bill-row"><div class="rv-bill-main"><span class="rv-bill-name">${esc(b.name)}</span><span class="rv-bill-when ${ov ? "urg" : ""}">${_billLabel(n)}</span></div><span class="rv-bill-amt">${fmtMoney(b.amount)}</span></div>`; }).join("")}</div>
-          ${_upBills.length > 5 ? `<div class="rv-bills-more">+${_upBills.length - 5} outra(s)</div>` : ""}
+          <div class="rv-bills-list">${_upBills.slice(0, 3).map((b) => { const n = _billDays(b.date); const ov = n <= 1; return `<div class="rv-bill-row"><div class="rv-bill-main"><span class="rv-bill-name">${esc(b.name)}</span><span class="rv-bill-when ${ov ? "urg" : ""}">${_billLabel(n)}</span></div><span class="rv-bill-amt">${fmtMoney(b.amount)}</span></div>`; }).join("")}</div>
+          ${_upBills.length > 3 ? `<div class="rv-bills-more">+${_upBills.length - 3} outra(s)</div>` : ""}
           <div class="rv-bills-total">Total <b>${fmtMoney(_upTotal)}</b></div>
         </div>` : ""}
         <div class="rv-card" onclick="window._navSection('financas')"><div class="rv-k">Finan\xE7as \u00b7 hoje</div><div class="rv-v">${fmtMoney(despTotal)}</div><div class="rv-s">${despesas.length} gasto(s) hoje</div></div>
