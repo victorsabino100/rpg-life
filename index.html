@@ -986,11 +986,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     .section-header h1 { font-size: 21px !important; flex: 1 1 100%; line-height: 1.2 !important; margin: 0 !important; }
     .section-header > div { width: 100%; justify-content: flex-start !important; flex-wrap: wrap; }
     .section-header > button, .section-header > select { flex: 0 0 auto; }
-    /* boards em kanban: colunas mais estreitas pra ver a próxima espiando */
-    .journey-col, .crm-col { width: 62vw !important; max-width: 220px; min-height: 180px !important; flex: 0 0 auto; padding: 9px !important; }
-    .objective-card, .crm-card { padding: 10px !important; margin-bottom: 7px !important; }
-    .obj-title, .crm-card-name { font-size: 13px !important; }
-    .journey-col-head { padding: 9px 11px !important; }
+    /* boards em kanban: colunas estreitas pra caber mais na tela */
+    .journey-col, .crm-col { width: 50vw !important; max-width: 190px !important; min-height: 140px !important; flex: 0 0 50vw !important; padding: 8px !important; }
+    .objective-card, .crm-card { padding: 9px !important; margin-bottom: 6px !important; border-radius: 10px !important; }
+    .obj-title, .crm-card-name { font-size: 12.5px !important; margin-bottom: 6px !important; }
+    .journey-col-head { padding: 8px 10px !important; margin: -8px -8px 9px !important; }
+    .journey-col-headtitle, .crm-col-title { font-size: 12px !important; }
+    .obj-stats, .crm-col-total { font-size: 10px !important; }
+    .objective-card .obj-area { margin-bottom: 5px; }
+    .crm-board, .journey-board { gap: 10px !important; }
     .fin-tabs, .lib-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     /* compactar menus e itens para caber mais na tela */
     #sidebar .nav-list li { padding: 8px 12px !important; font-size: 13.5px !important; margin-bottom: 1px; }
