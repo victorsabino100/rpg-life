@@ -481,6 +481,12 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .checklist-check:hover { border-color:var(--green); transform:scale(1.1); }
 .checklist-check.done { background:var(--green); border-color:var(--green); color:#fff; }
 .checklist-text { flex:1; font-size:14px; }
+.checklist-subs { margin:0 0 6px 34px; display:flex; flex-direction:column; gap:3px; }
+.checklist-sub { display:flex; align-items:center; gap:8px; font-size:13px; }
+.checklist-sub-box { flex:none; width:16px; height:16px; border:2px solid var(--border); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; line-height:1; transition:all .14s ease; }
+.checklist-sub-box:hover { border-color:var(--green); }
+.checklist-sub-box.done { background:var(--green); border-color:var(--green); }
+.checklist-sub.done .checklist-sub-txt { text-decoration:line-through; color:var(--muted); }
 .checklist-del { background:none; border:none; color:var(--muted); cursor:pointer; opacity:.5; transition:opacity .15s ease, color .15s ease; }
 .checklist-item:hover .checklist-del { opacity:1; }
 .checklist-del:hover { color:var(--red); opacity:1; }
@@ -2926,16 +2932,21 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <div id="checklist-items">
         ${(note.checklist || []).map((item, i) => {
         const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
+        const subs = item.subs || [];
+        const subDone = subs.filter((s) => s.done).length;
         return `
+          <div class="checklist-block">
           <div class="checklist-item ${item.done ? "done" : ""}" id="cli-${i}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
             <div class="checklist-text" style="flex:1;cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
-              <span>${esc2(item.text)}${item.desc ? ` <span style="color:var(--muted);font-size:11px">️\u{1F4C4}</span>` : ""}${item.movedFrom ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504} ${fmtDateBR(item.movedFrom)}</span>` : ""}</span>
+              <span>${esc2(item.text)}${subs.length ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Sub-itens">☑ ${subDone}/${subs.length}</span>` : ""}${item.desc ? ` <span style="color:var(--muted);font-size:11px">️\u{1F4C4}</span>` : ""}${item.movedFrom ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504} ${fmtDateBR(item.movedFrom)}</span>` : ""}</span>
               ${item.desc ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${esc2(item.desc)}</div>` : ""}
             </div>
             ${item.due ? `<span class="badge badge-${overdue ? "red" : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
             <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
             <button class="checklist-del" onclick="window._delCheck(${i})">\u2715</button>
+          </div>
+          ${subs.length ? `<div class="checklist-subs">${subs.map((s, j) => `<div class="checklist-sub ${s.done ? "done" : ""}"><div class="checklist-sub-box ${s.done ? "done" : ""}" onclick="window._toggleSub(${i},${j})">${s.done ? "\u2713" : ""}</div><span class="checklist-sub-txt">${esc2(s.text)}</span></div>`).join("")}</div>` : ""}
           </div>
         `;
       }).join("")}
@@ -2944,24 +2955,49 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <button class="btn btn-primary btn-sm" style="width:100%" onclick="window._openAddCheck()">+ Nova atividade</button>
       </div>
     `;
+      window._toggleSub = (i, j) => {
+        storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[i]; if (it && it.subs && it.subs[j]) it.subs[j].done = !it.subs[j].done; return ns; });
+        renderPanels();
+      };
+      // Editor de sub-checklist usado nos modais de atividade
+      window._subState = [];
+      window._subRender = () => {
+        const el = document.getElementById("chk-subs"); if (!el) return;
+        const eqa = (s) => esc2(s || "").replace(/"/g, "&quot;");
+        el.innerHTML = window._subState.map((s, j) => `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <div onclick="window._subToggle(${j})" style="width:20px;height:20px;flex:none;border:2px solid ${s.done ? "var(--green)" : "var(--border)"};background:${s.done ? "var(--green)" : "transparent"};border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px">${s.done ? "\u2713" : ""}</div>
+            <input value="${eqa(s.text)}" oninput="window._subState[${j}].text=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();window._subAdd();}" placeholder="Subtarefa\u2026" style="flex:1;${s.done ? "text-decoration:line-through;color:var(--muted)" : ""}">
+            <button onclick="window._subDel(${j})" title="Remover" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px">\u2715</button>
+          </div>`).join("");
+      };
+      window._subAdd = () => { window._subState.push({ text: "", done: false }); window._subRender(); setTimeout(() => { const inp = document.querySelectorAll("#chk-subs input"); if (inp.length) inp[inp.length - 1].focus(); }, 30); };
+      window._subDel = (j) => { window._subState.splice(j, 1); window._subRender(); };
+      window._subToggle = (j) => { window._subState[j].done = !window._subState[j].done; window._subRender(); };
+      window._subCollect = () => window._subState.map((s) => ({ text: (s.text || "").trim(), done: !!s.done })).filter((s) => s.text);
+      const _subEditorHTML = `<div class="form-group"><label>Sub-checklist (itens da atividade)</label><div id="chk-subs"></div><button class="btn btn-ghost btn-sm" onclick="window._subAdd()">+ item</button></div>`;
       window._openAddCheck = () => {
+        window._subState = [];
         window._modalContent(`
         <div class="modal-title">\u2705 Nova atividade</div>
         <div class="form-group"><label>T\xEDtulo da atividade</label><input id="chk-title" placeholder="Ex: Enviar proposta"></div>
-        <div class="form-group"><label>Descri\xE7\xE3o (opcional)</label><textarea id="chk-desc" placeholder="Detalhes da atividade..." style="min-height:140px;resize:vertical"></textarea></div>
+        <div class="form-group"><label>Descri\xE7\xE3o (opcional)</label><textarea id="chk-desc" placeholder="Detalhes da atividade..." style="min-height:100px;resize:vertical"></textarea></div>
+        ${_subEditorHTML}
         <div class="form-group"><label>Concluir at\xE9 (dia e hor\xE1rio, opcional)</label><input type="datetime-local" id="chk-due"></div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px">\u{1F4A1} Se n\xE3o for conclu\xEDda no dia, passa automaticamente para o dia seguinte.</div>
         <button class="btn btn-primary" style="width:100%" onclick="window._saveNewCheck()">Adicionar</button>
       `);
+        window._subRender();
         setTimeout(() => { const t = document.getElementById("chk-title"); if (t) t.focus(); }, 50);
         window._saveNewCheck = () => {
           const text = document.getElementById("chk-title").value.trim();
           if (!text) return;
           const desc = document.getElementById("chk-desc").value.trim();
           const due = document.getElementById("chk-due").value || null;
+          const subs = window._subCollect();
           storage_default.update("notes", (ns) => {
             if (!ns[activeDate]) ns[activeDate] = { checklist: [], text: "", mood: "" };
-            ns[activeDate].checklist.push({ text, desc, done: false, due });
+            ns[activeDate].checklist.push({ text, desc, done: false, due, subs });
             return ns;
           });
           window._closeModal();
@@ -3014,20 +3050,24 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         const item = (storage_default.get("notes")[activeDate]?.checklist || [])[i];
         if (!item) return;
         const eqa = (s) => esc2(s).replace(/"/g, "&quot;");
+        window._subState = (item.subs || []).map((s) => ({ text: s.text, done: !!s.done }));
         window._modalContent(`
         <div class="modal-title">${item.done ? "✓ " : ""}Atividade</div>
         <div class="form-group"><label>T\xEDtulo</label><input id="ci-title" value="${eqa(item.text || "")}"></div>
-        <div class="form-group"><label>Descri\xE7\xE3o</label><textarea id="ci-desc" style="min-height:160px;resize:vertical" placeholder="Detalhes da atividade...">${esc2(item.desc || "")}</textarea></div>
+        <div class="form-group"><label>Descri\xE7\xE3o</label><textarea id="ci-desc" style="min-height:110px;resize:vertical" placeholder="Detalhes da atividade...">${esc2(item.desc || "")}</textarea></div>
+        ${_subEditorHTML}
         <div class="form-group"><label>Concluir at\xE9 (opcional)</label><input type="datetime-local" id="ci-due" value="${item.due || ""}"></div>
         <button class="btn btn-primary" style="width:100%" onclick="window._saveCheckItem(${i})">Salvar</button>
       `);
-        setTimeout(() => { const d = document.getElementById("ci-desc"); if (d) d.focus(); }, 50);
+        window._subRender();
+        setTimeout(() => { const d = document.getElementById("ci-title"); if (d) d.focus(); }, 50);
         window._saveCheckItem = (idx) => {
           const text = document.getElementById("ci-title").value.trim();
           if (!text) return;
           const desc = document.getElementById("ci-desc").value.trim();
           const due = document.getElementById("ci-due").value || null;
-          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; } return ns; });
+          const subs = window._subCollect();
+          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; } return ns; });
           window._closeModal();
           renderPanels();
         };
