@@ -6175,8 +6175,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <div id="workout-templates"></div>
         </div>
         <div class="card">
-          <div class="card-title">\u{1F4C5} Hist\xF3rico Recente</div>
-          <div id="workout-log"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div class="card-title" style="margin:0">\u{1F4C5} Hist\xF3rico Recente</div>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearWorkoutLog()">\u{1F5D1} Limpar</button>
+          </div>
+          <div id="workout-log" style="margin-top:10px"></div>
         </div>
       </div>
       <div class="card" id="active-workout-card" style="display:none">
@@ -6186,6 +6189,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       window._openAddWorkout = openAddWorkout;
       window._startWorkout = startWorkout;
       window._deleteWorkout = deleteWorkout;
+      window._clearWorkoutLog = () => {
+        if (!confirm("Isto apaga TODO o hist\xF3rico de treinos registrados. Os treinos cadastrados (modelos) s\xE3o mantidos.\n\nContinuar?")) return;
+        storage_default.update("habits", (h) => { h = h || {}; h.log = []; return h; });
+        renderLog();
+        showToast("\u{1F9F9} Hist\xF3rico de treinos limpo");
+      };
       renderTemplates();
       renderLog();
     } else {
@@ -7145,7 +7154,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="card" style="padding:18px">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
         <div style="font-size:13px;color:var(--muted)">${totalActs} realiza\xE7\xF5es no m\xEAs \xB7 clique num dia para ver os detalhes</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">${legend}</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">${legend}<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearTimeline()">\u{1F5D1} Limpar tudo</button></div>
       </div>
       ${totalActs ? `<div style="display:flex;gap:2px;align-items:flex-end;overflow-x:auto;padding-bottom:4px">${bars}</div>` : `<div class="empty-state" style="margin:30px 0"><div class="empty-icon">\u{1F331}</div>Ainda n\xE3o h\xE1 realiza\xE7\xF5es registradas neste m\xEAs.<br>Conforme voc\xEA cumpre tarefas, elas aparecem aqui.</div>`}
     </div>
@@ -7171,6 +7180,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       renderTimeline(container);
     };
     window._tlDay = (ds) => { st.day = st.day === ds ? null : ds; renderTimeline(container); };
+    window._clearTimeline = () => {
+      if (!confirm("Isto apaga TODA a Linha do Tempo (todas as realiza\xE7\xF5es registradas). Esta a\xE7\xE3o n\xE3o pode ser desfeita.\n\nContinuar?")) return;
+      storage_default.set("timeline", []);
+      st.day = null;
+      renderTimeline(container);
+      showToast("\u{1F9F9} Linha do Tempo limpa");
+    };
     window._tlMood = (mk) => {
       storage_default.update("dayMoods", (mo) => { mo = mo || {}; if (mo[st.day] === mk) delete mo[st.day]; else mo[st.day] = mk; return mo; });
       renderTimeline(container);
