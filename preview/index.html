@@ -456,6 +456,13 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .note-hilite-sw { width:20px; height:20px; padding:0 !important; border-radius:5px !important; border:1px solid var(--border) !important; cursor:pointer; }
 .note-hilite-sw.clear { background:var(--surface2); position:relative; }
 .note-hilite-sw.clear:before { content:"⦸"; font-size:13px; color:var(--muted); position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.note-chk { display:flex; align-items:flex-start; gap:8px; margin:3px 0; }
+.note-chk-box { flex:none; width:19px; height:19px; margin-top:2px; border:2px solid var(--muted); border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:12px; line-height:1; color:#fff; -webkit-user-select:none; user-select:none; transition:all .14s ease; }
+.note-chk-box:hover { border-color:var(--green); }
+.note-chk-t { flex:1; min-width:0; }
+.note-chk[data-done="1"] > .note-chk-box { background:var(--green); border-color:var(--green); }
+.note-chk[data-done="1"] > .note-chk-box:after { content:"✓"; }
+.note-chk[data-done="1"] > .note-chk-t { text-decoration:line-through; color:var(--muted); }
 #sel-toolbar { position:fixed; z-index:600; display:none; align-items:center; gap:3px; padding:5px 7px; border-radius:12px; background:color-mix(in srgb, var(--surface) 78%, transparent); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid var(--border); box-shadow:0 10px 30px rgba(0,0,0,.24); animation:selbarIn .12s ease; }
 #sel-toolbar.show { display:flex; }
 @keyframes selbarIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
@@ -2110,6 +2117,29 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       if ((e.key === "Enter" || e.keyCode === 13) && !e.shiftKey) {
         var s2 = window.getSelection();
         if (s2 && s2.rangeCount && s2.isCollapsed && ed.contains(s2.anchorNode)) {
+          // item de checklist: Enter cria novo item; item vazio sai da lista
+          var cknode = s2.getRangeAt(0).startContainer;
+          cknode = cknode.nodeType === 3 ? cknode.parentElement : cknode;
+          var chk = cknode && cknode.closest ? cknode.closest(".note-chk") : null;
+          if (chk && ed.contains(chk)) {
+            e.preventDefault();
+            var tt = chk.querySelector(".note-chk-t");
+            var ctxt = (tt ? tt.textContent : "").replace(/​/g, "").trim();
+            if (ctxt === "") {
+              var nd0 = document.createElement("div"); nd0.appendChild(document.createElement("br"));
+              chk.replaceWith(nd0);
+              var r00 = document.createRange(); r00.setStart(nd0, 0); r00.collapse(true);
+              s2.removeAllRanges(); s2.addRange(r00);
+            } else {
+              var nchk = window._makeChkEl("");
+              if (chk.nextSibling) chk.parentNode.insertBefore(nchk, chk.nextSibling); else chk.parentNode.appendChild(nchk);
+              var nts = nchk.querySelector(".note-chk-t");
+              var r01 = document.createRange(); r01.selectNodeContents(nts); r01.collapse(false);
+              s2.removeAllRanges(); s2.addRange(r01);
+            }
+            if (typeof save === "function") save();
+            return;
+          }
           var li = s2.getRangeAt(0).startContainer;
           li = li.nodeType === 3 ? li.parentElement : li;
           while (li && li !== ed && li.tagName !== "LI") li = li.parentElement;
@@ -2223,6 +2253,56 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     document.addEventListener("mousedown", function (e) { if (bar.contains(e.target)) return; setTimeout(position, 0); });
   }
   setupSelToolbar();
+  // ===== Checklist dentro das notas (estilo Apple Notes) =====
+  window._noteFlush = function (ed) {
+    if (!ed) return; var id = ed.id;
+    try {
+      if (id === "note-rich") { if (window._noteSaveRich) window._noteSaveRich(); }
+      else if (id === "kn-content") { if (window._knFlush) window._knFlush(); }
+      else { var rid = id.replace(/-ed$/, ""); if (window._richCbs && window._richCbs[rid]) window._richCbs[rid](); }
+    } catch (e) {}
+  };
+  window._makeChkEl = function (html) {
+    var div = document.createElement("div");
+    div.className = "note-chk"; div.setAttribute("data-done", "0");
+    var box = document.createElement("span");
+    box.className = "note-chk-box"; box.setAttribute("contenteditable", "false");
+    box.setAttribute("onmousedown", "event.preventDefault()");
+    box.setAttribute("onclick", "window._noteChkToggle(this)");
+    var t = document.createElement("span"); t.className = "note-chk-t";
+    if (html) t.innerHTML = html; else t.appendChild(document.createTextNode("​"));
+    div.appendChild(box); div.appendChild(t);
+    return div;
+  };
+  window._noteChkToggle = function (box) {
+    var div = box.closest && box.closest(".note-chk"); if (!div) return;
+    div.setAttribute("data-done", div.getAttribute("data-done") === "1" ? "0" : "1");
+    window._noteFlush(box.closest(".note-rich"));
+  };
+  window._noteChkInsert = function () {
+    var ed = window._selActiveEditor ? window._selActiveEditor() : null;
+    if (!ed) { var a = document.activeElement; if (a && a.classList && a.classList.contains("note-rich")) ed = a; }
+    if (!ed) return;
+    ed.focus();
+    var sel = window.getSelection(); if (!sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    var block = range.startContainer; if (block.nodeType === 3) block = block.parentElement;
+    while (block && block !== ed && block.parentElement !== ed) block = block.parentElement;
+    var placeEnd = function (node) { var r = document.createRange(); r.selectNodeContents(node); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); };
+    if (block && block !== ed && block.parentElement === ed) {
+      if (block.classList && block.classList.contains("note-chk")) {
+        var t2 = block.querySelector(".note-chk-t"); var nd = document.createElement("div");
+        nd.innerHTML = t2 ? t2.innerHTML : (block.textContent || ""); if (!nd.innerHTML.trim()) nd.appendChild(document.createElement("br"));
+        block.replaceWith(nd); placeEnd(nd);
+      } else {
+        var chk = window._makeChkEl(block.innerHTML); block.replaceWith(chk); placeEnd(chk.querySelector(".note-chk-t"));
+      }
+    } else {
+      var chk2 = window._makeChkEl(""); range.insertNode(chk2); placeEnd(chk2.querySelector(".note-chk-t"));
+    }
+    ed.focus();
+    window._noteFlush(ed);
+  };
   function flowsGet() { const f = storage_default.get("flows"); return f && Array.isArray(f.items) ? f : { items: [] }; }
   function flowsSave(f) { storage_default.set("flows", f); }
   function flowCur() { return flowsGet().items.find((x) => x.id === flowState.openId) || null; }
@@ -3023,6 +3103,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <option value="3">3</option>
         </select>
         <button onmousedown="event.preventDefault()" onclick="noteBold()" title="Negrito" style="font-weight:800;min-width:34px">B</button>
+        <button onmousedown="event.preventDefault()" onclick="window._noteChkInsert()" title="Checklist" style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l1.4 1.4L8 4.3"/><path d="M3.5 12l1.4 1.4L8 10.3"/><path d="M3.5 18l1.4 1.4L8 16.3"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
         <span style="width:1px;height:22px;background:var(--border);margin:0 3px;align-self:center"></span>
         <span title="Marca-texto" style="align-self:center;font-size:13px;color:var(--muted);margin-right:1px">🖍</span>
         <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="noteHilite('#FFE08A')" title="Marcar amarelo" style="background:#FFE08A"></button>
@@ -3569,6 +3650,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <option value="3">3</option>
         </select>
         <button onmousedown="event.preventDefault()" onclick="knBold()" title="Negrito" style="font-weight:800;min-width:34px">B</button>
+        <button onmousedown="event.preventDefault()" onclick="window._noteChkInsert()" title="Checklist" style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l1.4 1.4L8 4.3"/><path d="M3.5 12l1.4 1.4L8 10.3"/><path d="M3.5 18l1.4 1.4L8 16.3"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
         <span style="width:1px;height:22px;background:var(--border);margin:0 3px;align-self:center"></span>
         <span title="Marca-texto" style="align-self:center;font-size:13px;color:var(--muted);margin-right:1px">🖍</span>
         <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="knHilite('#FFE08A')" title="Marcar amarelo" style="background:#FFE08A"></button>
@@ -3636,6 +3718,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         });
         renderNoteList();
       };
+      window._knFlush = saveKn;
       window._knLastRange = null;
       window._knSaveRange = () => {
         const e = document.getElementById("kn-content"); if (!e) return;
@@ -6770,6 +6853,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <option value="3">3</option>
       </select>
       <button onmousedown="event.preventDefault()" onclick="window._richBold('${id}')" title="Negrito" style="font-weight:800;min-width:34px">B</button>
+      <button onmousedown="event.preventDefault()" onclick="window._noteChkInsert()" title="Checklist" style="display:inline-flex;align-items:center"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l1.4 1.4L8 4.3"/><path d="M3.5 12l1.4 1.4L8 10.3"/><path d="M3.5 18l1.4 1.4L8 16.3"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
       <span style="width:1px;height:22px;background:var(--border);margin:0 3px;align-self:center"></span>
       <span title="Marca-texto" style="align-self:center;font-size:13px;color:var(--muted);margin-right:1px">🖍</span>
       <button class="note-hilite-sw" onmousedown="event.preventDefault()" onclick="window._richHilite('${id}','#FFE08A')" title="Marcar amarelo" style="background:#FFE08A"></button>
