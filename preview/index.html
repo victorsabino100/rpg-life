@@ -509,11 +509,14 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 
 /* ================= OBJETIVOS ================= */
 .journey-board { display:flex; gap:16px; overflow-x:auto; padding-bottom:12px; align-items:flex-start; }
-.journey-col { flex-shrink:0; width:262px; background:var(--surface2); border-radius:var(--r-lg); padding:11px; transition:background .15s ease; }
-.journey-col.drag-over { background:var(--border); outline:2px dashed var(--primary); }
+.journey-col { flex-shrink:0; width:262px; background:var(--surface2); border-radius:var(--r-lg); padding:11px; transition:background .15s ease; min-height:280px; display:flex; flex-direction:column; }
+.journey-col.drag-over { background:color-mix(in srgb, var(--primary) 14%, var(--surface2)); outline:2px dashed var(--primary); outline-offset:-3px; }
+.journey-col .obj-quickadd { margin-top:auto; }
 .journey-col-head { margin:-11px -11px 11px; padding:12px 14px; border-radius:var(--r-lg) var(--r-lg) 0 0; }
 .journey-col-headtitle { font-family:var(--font-display); font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; }
-.objective-card[draggable="true"] { cursor:grab; }
+.objective-card { cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
+.objective-card.obj-dragging { opacity:.35; }
+.obj-drag-ghost { position:fixed; z-index:700; pointer-events:none; opacity:.92; transform:rotate(1.5deg); box-shadow:0 14px 34px rgba(0,0,0,.32); }
 .objective-card:active { cursor:grabbing; }
 .journey-col-title { font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:13px; display:flex; align-items:center; gap:6px; }
 .objective-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px; margin-bottom:9px; cursor:pointer; transition:all .18s ease; box-shadow:var(--shadow-sm); }
@@ -985,6 +988,16 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     /* boards em kanban: largura confortável no celular */
     .journey-col, .crm-col { width: 82vw !important; max-width: 320px; flex: 0 0 auto; }
     .fin-tabs, .lib-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* compactar menus e itens para caber mais na tela */
+    #sidebar .nav-list li { padding: 8px 12px !important; font-size: 13.5px !important; margin-bottom: 1px; }
+    #sidebar .nav-list li span svg { width: 17px !important; height: 17px !important; }
+    #sidebar .nav-list { padding: 8px !important; }
+    .card { padding: 15px !important; }
+    .section-header { margin-bottom: 14px !important; }
+    .fin-tab, .lib-tab { padding: 7px 12px !important; font-size: 12.5px !important; }
+    .rv-card { padding: 12px !important; }
+    .task-item, .habit-row, .checklist-item, .tl-card { font-size: 13px; }
+    .book-card, .reward-card { padding: 14px !important; }
   }
   </style>
 </head>
@@ -3313,17 +3326,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     window._openAddObj = openAddObjectiveModal;
     window._openEditObj = openEditObjectiveModal;
     window._toggleMilestone = toggleMilestone;
-    window._objDrag = (ev, id) => {
-      _objDragId = id;
-      if (ev?.dataTransfer) ev.dataTransfer.effectAllowed = "move";
-    };
-    window._objDrop = (ev, stage) => {
-      ev.preventDefault();
-      if (!_objDragId) return;
-      let justCompleted = false, justUncompleted = false, attrKey = "mente";
+    window._objDropTo = (objId, stage) => {
+      let justCompleted = false, justUncompleted = false, attrKey = "mente", changed = false;
       storage_default.update("objectives", (os) => {
-        const o = os.find((x) => x.id === _objDragId);
+        const o = os.find((x) => x.id === objId);
         if (o && o.stage !== stage) {
+          changed = true;
           const wasConcluido = o.stage === "concluido";
           o.stage = stage;
           attrKey = o.attr || "mente";
@@ -3338,15 +3346,56 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         }
         return os;
       });
-      _objDragId = null;
-      if (justCompleted) {
-        addXP(150, attrKey);
-        celebrate("\u{1F3AF} Objetivo conclu\xEDdo! +150 XP");
-      }
+      if (justCompleted) { addXP(150, attrKey); celebrate("\u{1F3AF} Objetivo conclu\xEDdo! +150 XP"); }
       if (justUncompleted) addXP(-150, attrKey);
-      renderBoard();
+      if (changed) renderBoard();
     };
     renderBoard();
+  }
+  // Arrastar cards de objetivo por Pointer Events (funciona no desktop e no toque/celular)
+  function wireObjDrag() {
+    const board = document.getElementById("obj-board"); if (!board) return;
+    board.querySelectorAll(".objective-card").forEach((card) => {
+      const oid = card.dataset.oid;
+      let sx = 0, sy = 0, dragging = false, ghost = null, curCol = null, gdx = 0, gdy = 0;
+      card.addEventListener("pointerdown", (e) => {
+        if (e.button && e.button !== 0) return;
+        sx = e.clientX; sy = e.clientY; dragging = false; card._pid = e.pointerId;
+      });
+      card.addEventListener("pointermove", (e) => {
+        if (card._pid == null || e.pointerId !== card._pid) return;
+        if (!dragging) {
+          if (Math.abs(e.clientX - sx) < 7 && Math.abs(e.clientY - sy) < 7) return;
+          dragging = true;
+          try { card.setPointerCapture(e.pointerId); } catch (er) {}
+          const r = card.getBoundingClientRect();
+          gdx = e.clientX - r.left; gdy = e.clientY - r.top;
+          ghost = card.cloneNode(true);
+          ghost.classList.add("obj-drag-ghost"); ghost.classList.remove("obj-dragging");
+          ghost.style.width = r.width + "px";
+          document.body.appendChild(ghost);
+          card.classList.add("obj-dragging");
+        }
+        e.preventDefault();
+        ghost.style.left = (e.clientX - gdx) + "px";
+        ghost.style.top = (e.clientY - gdy) + "px";
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const col = under && under.closest ? under.closest(".journey-col") : null;
+        if (col !== curCol) { if (curCol) curCol.classList.remove("drag-over"); curCol = col; if (curCol) curCol.classList.add("drag-over"); }
+      });
+      const finish = () => {
+        if (card._pid == null) return;
+        const wasDragging = dragging;
+        card._pid = null; dragging = false;
+        card.classList.remove("obj-dragging");
+        if (ghost) { ghost.remove(); ghost = null; }
+        const target = curCol; if (curCol) { curCol.classList.remove("drag-over"); curCol = null; }
+        if (wasDragging && target && target.dataset.stage) window._objDropTo(oid, target.dataset.stage);
+        else if (!wasDragging) window._openEditObj(oid);
+      };
+      card.addEventListener("pointerup", finish);
+      card.addEventListener("pointercancel", () => { if (ghost) { ghost.remove(); ghost = null; } if (curCol) { curCol.classList.remove("drag-over"); curCol = null; } card.classList.remove("obj-dragging"); card._pid = null; dragging = false; });
+    });
   }
   function renderBoard() {
     const objs = storage_default.get("objectives") || [];
@@ -3355,18 +3404,19 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     board.innerHTML = STAGES.map((stage) => {
       const items = objs.filter((o) => o.stage === stage.key);
       return `
-      <div class="journey-col" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over');window._objDrop(event,'${stage.key}')">
+      <div class="journey-col" data-stage="${stage.key}">
         <div class="journey-col-head" style="background:linear-gradient(180deg, ${stage.color}38, ${stage.color}14);border-bottom:2px solid ${stage.color}">
           <div class="journey-col-headtitle" style="color:var(--text)">${stage.label} <span style="background:${stage.color}22;color:${stage.color};padding:2px 8px;border-radius:100px;font-size:11px;font-family:var(--font-mono)">${items.length}</span></div>
         </div>
         ${items.map((obj) => renderObjCard(obj)).join("")}
-        <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="window._quickAddObj('${stage.key}')">+ Adicionar</button>
+        <button class="btn btn-ghost btn-sm obj-quickadd" style="width:100%;margin-top:8px" onclick="window._quickAddObj('${stage.key}')">+ Adicionar</button>
       </div>
     `;
     }).join("");
     window._quickAddObj = (stage) => {
       openAddObjectiveModal(stage);
     };
+    wireObjDrag();
   }
   function renderObjCard(obj) {
     const done = (obj.milestones || []).filter((m) => m.done).length;
@@ -3374,7 +3424,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const pct = total ? Math.round(done / total * 100) : 0;
     const attr = ATTRS[obj.attr] || ATTRS.mente;
     return `
-    <div class="objective-card" draggable="true" ondragstart="window._objDrag(event,'${obj.id}')" onclick="window._openEditObj('${obj.id}')">
+    <div class="objective-card" data-oid="${obj.id}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div class="obj-title">${obj.title}</div>
         <span style="font-size:18px">${attr.emoji}</span>
