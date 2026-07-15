@@ -516,7 +516,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .journey-col-headtitle { font-family:var(--font-display); font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; }
 .objective-card { cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; }
 .objective-card.obj-dragging { opacity:.35; }
-.obj-drag-ghost { position:fixed; z-index:700; pointer-events:none; opacity:.92; transform:rotate(1.5deg); box-shadow:0 14px 34px rgba(0,0,0,.32); }
+.obj-drag-ghost { position:fixed; top:0; left:0; margin:0 !important; z-index:700; pointer-events:none; opacity:.92; box-shadow:0 14px 34px rgba(0,0,0,.32); transition:none !important; will-change:transform; }
+.obj-drag-ghost:hover { transform:none; }
 .objective-card:active { cursor:grabbing; }
 .journey-col-title { font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:13px; display:flex; align-items:center; gap:6px; }
 .objective-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px; margin-bottom:9px; cursor:pointer; transition:all .18s ease; box-shadow:var(--shadow-sm); }
@@ -985,8 +986,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     .section-header h1 { font-size: 21px !important; flex: 1 1 100%; line-height: 1.2 !important; margin: 0 !important; }
     .section-header > div { width: 100%; justify-content: flex-start !important; flex-wrap: wrap; }
     .section-header > button, .section-header > select { flex: 0 0 auto; }
-    /* boards em kanban: largura confortável no celular */
-    .journey-col, .crm-col { width: 82vw !important; max-width: 320px; flex: 0 0 auto; }
+    /* boards em kanban: colunas mais estreitas pra ver a próxima espiando */
+    .journey-col, .crm-col { width: 62vw !important; max-width: 220px; min-height: 180px !important; flex: 0 0 auto; padding: 9px !important; }
+    .objective-card, .crm-card { padding: 10px !important; margin-bottom: 7px !important; }
+    .obj-title, .crm-card-name { font-size: 13px !important; }
+    .journey-col-head { padding: 9px 11px !important; }
     .fin-tabs, .lib-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     /* compactar menus e itens para caber mais na tela */
     #sidebar .nav-list li { padding: 8px 12px !important; font-size: 13.5px !important; margin-bottom: 1px; }
@@ -3332,7 +3336,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const board = document.getElementById("obj-board"); if (!board) return;
     board.querySelectorAll(".objective-card").forEach((card) => {
       const oid = card.dataset.oid;
-      let sx = 0, sy = 0, dragging = false, ghost = null, curCol = null, gdx = 0, gdy = 0;
+      let sx = 0, sy = 0, dragging = false, ghost = null, curCol = null, gdx = 0, gdy = 0, raf = 0, lx = 0, ly = 0;
+      const paint = () => {
+        raf = 0; if (!ghost) return;
+        ghost.style.transform = "translate3d(" + (lx - gdx) + "px," + (ly - gdy) + "px,0) rotate(1.5deg)";
+        const under = document.elementFromPoint(lx, ly);
+        const col = under && under.closest ? under.closest(".journey-col") : null;
+        if (col !== curCol) { if (curCol) curCol.classList.remove("drag-over"); curCol = col; if (curCol) curCol.classList.add("drag-over"); }
+      };
       card.addEventListener("pointerdown", (e) => {
         if (e.button && e.button !== 0) return;
         sx = e.clientX; sy = e.clientY; dragging = false; card._pid = e.pointerId;
@@ -3340,7 +3351,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       card.addEventListener("pointermove", (e) => {
         if (card._pid == null || e.pointerId !== card._pid) return;
         if (!dragging) {
-          if (Math.abs(e.clientX - sx) < 7 && Math.abs(e.clientY - sy) < 7) return;
+          if (Math.abs(e.clientX - sx) < 6 && Math.abs(e.clientY - sy) < 6) return;
           dragging = true;
           try { card.setPointerCapture(e.pointerId); } catch (er) {}
           const r = card.getBoundingClientRect();
@@ -3352,24 +3363,26 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           card.classList.add("obj-dragging");
         }
         e.preventDefault();
-        ghost.style.left = (e.clientX - gdx) + "px";
-        ghost.style.top = (e.clientY - gdy) + "px";
-        const under = document.elementFromPoint(e.clientX, e.clientY);
-        const col = under && under.closest ? under.closest(".journey-col") : null;
-        if (col !== curCol) { if (curCol) curCol.classList.remove("drag-over"); curCol = col; if (curCol) curCol.classList.add("drag-over"); }
+        lx = e.clientX; ly = e.clientY;
+        if (!raf) raf = requestAnimationFrame(paint);
       });
       const finish = () => {
         if (card._pid == null) return;
         const wasDragging = dragging;
         card._pid = null; dragging = false;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
         card.classList.remove("obj-dragging");
+        if (ghost) { ghost.style.display = "none"; }
+        // alvo pela posição final do ponteiro (não depende do rAF)
+        let target = null;
+        if (wasDragging) { const u = document.elementFromPoint(lx, ly); target = u && u.closest ? u.closest(".journey-col") : null; }
         if (ghost) { ghost.remove(); ghost = null; }
-        const target = curCol; if (curCol) { curCol.classList.remove("drag-over"); curCol = null; }
+        if (curCol) { curCol.classList.remove("drag-over"); curCol = null; }
         if (wasDragging && target && target.dataset.stage) window._objDropTo(oid, target.dataset.stage);
         else if (!wasDragging) window._openEditObj(oid);
       };
       card.addEventListener("pointerup", finish);
-      card.addEventListener("pointercancel", () => { if (ghost) { ghost.remove(); ghost = null; } if (curCol) { curCol.classList.remove("drag-over"); curCol = null; } card.classList.remove("obj-dragging"); card._pid = null; dragging = false; });
+      card.addEventListener("pointercancel", () => { if (raf) { cancelAnimationFrame(raf); raf = 0; } if (ghost) { ghost.remove(); ghost = null; } if (curCol) { curCol.classList.remove("drag-over"); curCol = null; } card.classList.remove("obj-dragging"); card._pid = null; dragging = false; });
     });
   }
   function renderBoard() {
