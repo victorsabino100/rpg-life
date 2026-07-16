@@ -2855,6 +2855,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   var SIZE_META = { g: { label: "Grande", short: "G", max: 1, color: "#C7402E" }, m: { label: "M\xE9dia", short: "M", max: 3, color: "#E0952B" }, p: { label: "Pequena", short: "P", max: 5, color: "#1E7F5C" } };
   var SIZE_RANK = { g: 0, m: 1, p: 2 };
   function _szRank(it) { return (it && it.size != null && SIZE_RANK[it.size] != null) ? SIZE_RANK[it.size] : 3; }
+  // XP por tamanho: Grande 15 · Média 10 · Pequena 5 (sem tamanho = 10)
+  function _xpForSize(sz) { return sz === "g" ? 15 : sz === "p" ? 5 : 10; }
+  function _clArea(it) { return (it && it.area && ATTRS[it.area]) ? it.area : "mente"; }
+  // Estado de prazo p/ colorir: verde=feito, vermelho=vencido, amarelo=<2h, azul=no prazo
+  function _dueState(item) {
+    if (!item || !item.due) return null;
+    if (item.done) return { key: "done", color: "#1E9E73", badge: "green" };
+    const now = Date.now();
+    const due = new Date(item.due).getTime();
+    if (isNaN(due)) return null;
+    if (due < now) return { key: "late", color: "#DB5648", badge: "red" };
+    if (due - now <= 2 * 3600 * 1e3) return { key: "soon", color: "#E0A93B", badge: "gold" };
+    return { key: "ok", color: "#42B2DD", badge: "blue" };
+  }
   // Unifica missões do dia: o checklist (notes de hoje, itens com mission:true) é a fonte;
   // espelhamos em `tasks` (com _mirror) para aparecer na Sala inicial (dashboard).
   function syncMissionsToTasks() {
@@ -2871,15 +2885,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     let changed = false;
     const kept = tasks.filter((t) => !t._mirror || midSet.has(t.mid));
     if (kept.length !== tasks.length) { tasks = kept; changed = true; }
-    const XPBYSIZE = { g: 25, m: 15, p: 10 };
     missions.forEach((m) => {
-      const xp = XPBYSIZE[m.size] || 15;
+      const xp = _xpForSize(m.size);
+      const attr = _clArea(m);
       let t = tasks.find((x) => x._mirror && x.mid === m.mid);
       if (!t) {
-        tasks.unshift({ id: m.mid, mid: m.mid, name: m.text || "Miss\xE3o", attr: "mente", diff: "medio", xp, done: !!m.done, date: todayDS, _mirror: true, size: m.size || "" });
+        tasks.unshift({ id: m.mid, mid: m.mid, name: m.text || "Miss\xE3o", attr, diff: "medio", xp, done: !!m.done, date: todayDS, _mirror: true, size: m.size || "" });
         changed = true;
-      } else if (t.name !== (m.text || "Miss\xE3o") || t.done !== !!m.done || t.xp !== xp || t.date !== todayDS || t.size !== (m.size || "")) {
-        t.name = m.text || "Miss\xE3o"; t.done = !!m.done; t.xp = xp; t.date = todayDS; t.size = m.size || ""; changed = true;
+      } else if (t.name !== (m.text || "Miss\xE3o") || t.done !== !!m.done || t.xp !== xp || t.date !== todayDS || t.size !== (m.size || "") || t.attr !== attr) {
+        t.name = m.text || "Miss\xE3o"; t.done = !!m.done; t.xp = xp; t.date = todayDS; t.size = m.size || ""; t.attr = attr; changed = true;
       }
     });
     if (changed) storage_default.set("tasks", tasks);
@@ -2995,12 +3009,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       </div>
       <div id="checklist-items">
         ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => _szRank(a.item) - _szRank(b.item)).map(({ item, i }) => {
-        const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
+        const dueSt = _dueState(item);
         const subs = item.subs || [];
         const subDone = subs.filter((s) => s.done).length;
         return `
           <div class="checklist-block">
-          <div class="checklist-item ${item.mission ? "mission " : ""}${item.done ? "done" : ""}" id="cli-${i}">
+          <div class="checklist-item ${item.mission ? "mission " : ""}${item.done ? "done" : ""}" id="cli-${i}" style="${dueSt ? `border-left:3px solid ${dueSt.color}` : ""}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
             <div class="checklist-text" style="cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
               <div class="cl-line">
@@ -3012,7 +3026,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
               </div>
               ${item.desc ? `<div class="cl-desc">${esc2(item.desc)}</div>` : ""}
             </div>
-            ${item.due ? `<span class="badge badge-${overdue ? "red" : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
+            ${item.due ? `<span class="badge badge-${dueSt ? dueSt.badge : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
             <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
             <button class="checklist-del" onclick="window._delCheck(${i})">\u2715</button>
           </div>
@@ -3062,6 +3076,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         const inp = document.getElementById("chk-size"); if (inp) inp.value = k;
         btn.parentElement.querySelectorAll(".sz-opt").forEach((b) => b.classList.toggle("on", b === btn));
       };
+      const _areaSelectorHTML = (current) => {
+        const cur = (current && ATTRS[current]) ? current : "mente";
+        const opts = Object.entries(ATTRS).map(([k, a]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${a.name}</option>`).join("");
+        return `<div class="form-group"><label>\xC1rea da vida (pra onde vai a pontua\xE7\xE3o)</label>
+          <select id="chk-area">${opts}</select></div>`;
+      };
       const _missionToggleHTML = (checked, excludeIdx) => {
         const cnt = _missionCount(excludeIdx);
         const full = cnt >= 3 && !checked;
@@ -3078,6 +3098,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         window._modalContent(`
         <div class="modal-title">\u2705 Nova atividade</div>
         <div class="form-group"><label>T\xEDtulo da atividade</label><input id="chk-title" placeholder="Ex: Enviar proposta"></div>
+        ${_areaSelectorHTML("mente")}
         ${_sizeSelectorHTML("", -1)}
         ${_missionToggleHTML(false, -1)}
         <div class="form-group"><label>Descri\xE7\xE3o (opcional)</label><textarea id="chk-desc" placeholder="Detalhes da atividade..." style="min-height:100px;resize:vertical"></textarea></div>
@@ -3098,9 +3119,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (mission && _missionCount(-1) >= 3) { mission = false; showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); }
           let size = document.getElementById("chk-size")?.value || "";
           if (size && SIZE_META[size] && _sizeCount(size, -1) >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido hoje.`); size = ""; }
+          const area = document.getElementById("chk-area")?.value || "mente";
           storage_default.update("notes", (ns) => {
             if (!ns[activeDate]) ns[activeDate] = { checklist: [], text: "", mood: "" };
-            ns[activeDate].checklist.push({ text, desc, done: false, due, subs, mission, size });
+            ns[activeDate].checklist.push({ text, desc, done: false, due, subs, mission, size, area });
             return ns;
           });
           window._closeModal();
@@ -3133,19 +3155,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         renderPanels();
       };
       window._toggleCheck = (i) => {
-        let isNowDone = false, itemText = "";
+        let isNowDone = false, itemText = "", itemXp = 10, itemArea = "mente";
         storage_default.update("notes", (ns) => {
           const item = ns[activeDate].checklist[i];
           item.done = !item.done;
           isNowDone = item.done; itemText = item.text || "";
+          itemXp = _xpForSize(item.size); itemArea = _clArea(item);
           item.doneAt = item.done ? Date.now() : null;
           return ns;
         });
         if (isNowDone) {
           checkStreak();
-          addXP(10, "mente");
-          logTimeline("mente", "✓", "Atividade conclu\xEDda: " + itemText, null);
-        } else { addXP(-10, "mente"); removeTimelineByName(itemText); }
+          addXP(itemXp, itemArea);
+          logTimeline(itemArea, "✓", "Atividade conclu\xEDda: " + itemText, null);
+        } else { addXP(-itemXp, itemArea); removeTimelineByName(itemText); }
         renderPanels();
         renderDateList();
       };
@@ -3157,6 +3180,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         window._modalContent(`
         <div class="modal-title">${item.done ? "✓ " : ""}Atividade</div>
         <div class="form-group"><label>T\xEDtulo</label><input id="ci-title" value="${eqa(item.text || "")}"></div>
+        ${_areaSelectorHTML(item.area || "mente")}
         ${_sizeSelectorHTML(item.size || "", i)}
         ${_missionToggleHTML(!!item.mission, i)}
         <div class="form-group"><label>Descri\xE7\xE3o</label><textarea id="ci-desc" style="min-height:110px;resize:vertical" placeholder="Detalhes da atividade...">${esc2(item.desc || "")}</textarea></div>
@@ -3176,7 +3200,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (mission && _missionCount(idx) >= 3) { mission = false; showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); }
           let size = document.getElementById("chk-size")?.value || "";
           if (size && SIZE_META[size] && _sizeCount(size, idx) >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido hoje.`); size = item.size || ""; }
-          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; it.mission = mission; it.size = size; } return ns; });
+          const area = document.getElementById("chk-area")?.value || "mente";
+          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; it.mission = mission; it.size = size; it.area = area; } return ns; });
           window._closeModal();
           renderPanels();
         };
@@ -7222,7 +7247,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="card" style="padding:18px">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
         <div style="font-size:13px;color:var(--muted)">${totalActs} realiza\xE7\xF5es no m\xEAs \xB7 clique num dia para ver os detalhes</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">${legend}<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearTimeline()">\u{1F5D1} Limpar tudo</button></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">${legend}<button class="btn btn-primary btn-sm" onclick="window._tlAddManual()">✍️ Registrar algo que fiz</button><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearTimeline()">\u{1F5D1} Limpar tudo</button></div>
       </div>
       ${totalActs ? `<div style="display:flex;gap:2px;align-items:flex-end;overflow-x:auto;padding-bottom:4px">${bars}</div>` : `<div class="empty-state" style="margin:30px 0"><div class="empty-icon">\u{1F331}</div>Ainda n\xE3o h\xE1 realiza\xE7\xF5es registradas neste m\xEAs.<br>Conforme voc\xEA cumpre tarefas, elas aparecem aqui.</div>`}
     </div>
@@ -7240,6 +7265,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <div style="flex:1"><div style="font-size:14px">${esc(r.text)}</div></div>
         <span style="width:9px;height:9px;border-radius:50%;background:${(ATTRS[r.area] || ATTRS.mente).color}" title="${(ATTRS[r.area] || ATTRS.mente).name}"></span>
       </div>`).join("") : `<div style="color:var(--muted);font-size:13px">Nenhuma realiza\xE7\xE3o neste dia.</div>`}
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="window._tlAddManual('${st.day}')">✍️ Registrar algo neste dia</button>
     </div>` : ""}`;
     window._tlNav = (dir) => {
       let [yy, mm] = st.ym.split("-").map(Number);
@@ -7258,6 +7284,29 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     window._tlMood = (mk) => {
       storage_default.update("dayMoods", (mo) => { mo = mo || {}; if (mo[st.day] === mk) delete mo[st.day]; else mo[st.day] = mk; return mo; });
       renderTimeline(container);
+    };
+    window._tlAddManual = (ds) => {
+      const day = ds || st.day || todayStr();
+      const opts = Object.entries(ATTRS).map(([k, a]) => `<option value="${k}">${a.name}</option>`).join("");
+      window._modalContent(`
+        <div class="modal-title">✍️ Registrar realiza\xE7\xE3o</div>
+        <div class="form-group"><label>O que voc\xEA fez?</label><textarea id="tlm-text" placeholder="Ex: Fechei um novo cliente" style="min-height:90px;resize:vertical"></textarea></div>
+        <div class="form-group"><label>Data</label><input type="date" id="tlm-date" value="${day}"></div>
+        <div class="form-group"><label>\xC1rea da vida</label><select id="tlm-area">${opts}</select></div>
+        <button class="btn btn-primary" style="width:100%" onclick="window._tlSaveManual()">Registrar</button>
+      `);
+      setTimeout(() => { const t = document.getElementById("tlm-text"); if (t) t.focus(); }, 50);
+    };
+    window._tlSaveManual = () => {
+      const text = (document.getElementById("tlm-text").value || "").trim();
+      if (!text) { showToast("Escreva o que voc\xEA fez."); return; }
+      const date = document.getElementById("tlm-date").value || todayStr();
+      const area = document.getElementById("tlm-area").value || "mente";
+      storage_default.update("timeline", (t) => { t = t || []; t.push({ id: "tl" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date, ts: Date.now(), area: ATTRS[area] ? area : "mente", icon: "✍️", text, meta: { manual: true } }); return t; });
+      window._closeModal();
+      st.ym = date.slice(0, 7); st.day = date;
+      renderTimeline(container);
+      showToast("✍️ Registrado na Linha do Tempo");
     };
   }
 

@@ -1043,6 +1043,31 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }catch(e){}
 })();
 </script>
+<div id="preview-ribbon" style="position:fixed;top:0;right:0;z-index:99999;background:linear-gradient(120deg,#7C83FF,#FF7A6B);color:#fff;font:700 12px/1 'Public Sans',sans-serif;padding:7px 14px;border-bottom-left-radius:12px;letter-spacing:.06em;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none">🎨 PRÉVIA · sandbox visual</div>
+<script>
+(function(){
+  try{
+    if(localStorage.getItem('rpgx_char')) return;
+    var t="2026-07-16";
+    var S=function(k,v){localStorage.setItem(k,JSON.stringify(v));};
+    S('rpgx_char',{name:'Aventureiro',emoji:'🧙',totalXP:65,coins:29,workCoins:12,level:1,attrs:{saude:{xp:20,level:2},mente:{xp:15,level:1},riqueza:{xp:10,level:1},relacionamentos:{xp:8,level:1},carreira:{xp:7,level:1},espiritual:{xp:5,level:1}},achievements:['first_task'],streak:3,lastActive:new Date().toDateString(),avatar:{skin:'#EBB58E',hair:'curto',hairColor:'#3a2a20'}});
+    S('rpgx_tasks',[{id:'t1',name:'Meditar 15 minutos',area:'mente',xp:25,done:true,date:new Date().toDateString()},{id:'t2',name:'Treino de força',area:'saude',xp:50,done:false,date:new Date().toDateString()},{id:'t3',name:'Ler 20 páginas',area:'mente',xp:25,done:false,date:new Date().toDateString()},{id:'t4',name:'Ligar para cliente',area:'carreira',xp:25,done:false,date:new Date().toDateString()}]);
+    S('rpgx_fin',{incomes:[{id:'i1',name:'Salário',amount:8000,category:'',date:t}],fixedExpenses:[{id:'f1',name:'Aluguel',amount:2200,category:'Casa',date:t,status:'pending'},{id:'f2',name:'Internet',amount:120,category:'Casa',date:t,status:'paid'}],variableExpenses:[{id:'v1',name:'Mercado',amount:450,category:'Alimentação',date:t,status:'pending'}],debts:[],savings:[{id:'s1',name:'Reserva',amount:5000}],creditCards:[{id:'c1',bank:'Nubank',last4:'4821',limit:12000,color:'linear-gradient(135deg,#820ad1,#c44dff)'}],bankAccounts:[],customCategories:{fixed:['Casa','Pessoal'],variable:['Alimentação','Transporte','Lazer']},goals:[]});
+    S('rpgx_obj',[{id:'o1',title:'Correr uma maratona',stage:'andamento',milestones:[{id:'m1',text:'5km',done:true},{id:'m2',text:'10km',done:true},{id:'m3',text:'21km',done:false}]},{id:'o2',title:'Abrir segunda filial',stage:'planejando',milestones:[{id:'m4',text:'Achar ponto',done:false}]},{id:'o3',title:'Aprender inglês fluente',stage:'sonho',milestones:[]}]);
+    S('rpgx_insights',[{id:'n1',title:'Ideia de conteúdo',content:'Série sobre produtividade #marketing liga com [[Funil]]',tags:['marketing'],updatedAt:Date.now()},{id:'n2',title:'Funil',content:'Topo, meio, fundo #marketing',tags:['marketing'],updatedAt:Date.now()}]);
+    S('rpgx_lib',{books:[{id:'b1',title:'Hábitos Atômicos',author:'James Clear',status:'lendo',category:'Desenvolvimento pessoal'},{id:'b2',title:'A Startup Enxuta',author:'Eric Ries',status:'desejo',category:'Empreendedorismo'}],courses:[{id:'cu1',name:'Tráfego Pago Pro',status:'estudando',modules:[{id:'md1',name:'Meta Ads',done:true},{id:'md2',name:'Otimização',done:false}]}],categories:['Desenvolvimento pessoal','Empreendedorismo','Espiritual','Técnico']});
+    S('rpgx_crm',{stages:[{id:'s1',name:'Novo lead',color:'#3b82f6'},{id:'s2',name:'Reunião',color:'#8b5cf6'},{id:'s3',name:'Proposta',color:'#f59e0b'},{id:'s4',name:'Fechou',color:'#10b981',won:true}],leads:[{id:'l1',name:'Clínica Vida',stage:'s1',value:3000,origin:'Instagram'},{id:'l2',name:'Loja CarPlay',stage:'s2',value:5000,origin:'Indicação'},{id:'l3',name:'Dra. Julia',stage:'s4',value:4500,origin:'Site'}]});
+    S('rpgx_shop',[{id:'sh1',name:'Monitor 27"',category:'Eletrônicos',priority:'high',bought:false},{id:'sh2',name:'Tênis de corrida',category:'Saúde',priority:'med',bought:false},{id:'sh3',name:'Café especial',category:'Alimentação',priority:'low',bought:true}]);
+    S('rpgx_rewards',{items:[{id:'r1',name:'Jogar 1h de Vídeo Game',cost:120,icon:'🎮',category:'Lazer',currency:'vida'},{id:'r2',name:'Sair para comer',cost:350,icon:'🍕',category:'Alimentação',currency:'trabalho'}],redeemed:[{id:'r3',name:'Pausa de 30min',cost:30,icon:'☕',category:'Descanso',currency:'vida'}],history:[]});
+    S('rpgx_timeline',[{id:'tl1',date:t,ts:Date.now(),area:'mente',icon:'🧠',text:'Missão: Meditar 15 minutos'},{id:'tl2',date:t,ts:Date.now()-3600000,area:'saude',icon:'🏋️',text:'Treino concluído'}]);
+    S('rpgx_daymoods',{[t]:4});
+    S('rpgx_spiritual',{folders:[{id:'f_preg',name:'Pregações',icon:'📖',kind:'sermon',notes:[{id:'sp1',title:'Fé e ação',content:'Tiago 2:17',updatedAt:Date.now()}]},{id:'f_devo',name:'Devocional',icon:'🙏',kind:'devotional',notes:[]}]});
+    S('rpgx_flows',{items:[{id:'fldemo',name:'Estrutura da Sato',updatedAt:Date.now(),nodes:[{id:'r',x:700,y:560,text:'Sato Marketing',color:'#8A90A6'},{id:'a',x:960,y:460,text:'Tráfego',color:'#56C2F5'},{id:'b',x:960,y:560,text:'Conteúdo',color:'#C079F6'},{id:'c',x:960,y:660,text:'Comercial',color:'#FF7A6B'},{id:'a1',x:1200,y:460,text:'Meta Ads',color:'#7C83FF'}],edges:[{a:'r',b:'a'},{a:'r',b:'b'},{a:'r',b:'c'},{a:'a',b:'a1'}]}]});
+    S('rpgx_meals',{plan:{m3:{Seg:'Frango + arroz'}},log:{[t]:{m1:true}},slots:[{id:'m1',label:'Café da manhã',time:'07:00'},{id:'m2',label:'Lanche',time:'10:00'},{id:'m3',label:'Almoço',time:'12:30'},{id:'m4',label:'Lanche',time:'16:00'},{id:'m5',label:'Jantar',time:'20:00'}]});
+    S('rpgx_habits',{workouts:[],templates:[{id:'h1',name:'Treino A - Peito/Tríceps',exercises:[]},{id:'h2',name:'Treino B - Costas/Bíceps',exercises:[]}],log:[]});
+  }catch(e){}
+})();
+</script>
   <div id="app">
     <button id="mobile-menu-btn" onclick="window._toggleSidebar()" aria-label="Abrir menu">☰</button>
     <div id="sidebar-backdrop" onclick="window._closeSidebar()"></div>
