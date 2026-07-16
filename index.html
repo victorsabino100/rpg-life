@@ -480,7 +480,15 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .checklist-check { width:21px; height:21px; border-radius:50%; border:2px solid var(--border); cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; transition:all .16s ease; }
 .checklist-check:hover { border-color:var(--green); transform:scale(1.1); }
 .checklist-check.done { background:var(--green); border-color:var(--green); color:#fff; }
-.checklist-text { flex:1; font-size:14px; }
+.checklist-text { flex:1; font-size:14px; min-width:0; overflow:hidden; }
+.cl-line { display:flex; align-items:center; gap:5px; min-width:0; }
+.cl-title { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.cl-desc { font-size:12px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cl-size { flex:none; font-family:var(--font-mono); font-size:9px; font-weight:700; padding:1px 6px; border-radius:100px; color:#fff; letter-spacing:.03em; }
+.sz-group { display:flex; gap:6px; flex-wrap:wrap; }
+.sz-opt { padding:7px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface2); color:var(--text); cursor:pointer; font-size:12.5px; transition:all .12s ease; }
+.sz-opt.on { border-color:var(--szc, var(--primary)); background:color-mix(in srgb, var(--szc, var(--primary)) 15%, var(--surface2)); font-weight:700; }
+.sz-opt b { font-family:var(--font-mono); font-size:10px; color:var(--muted); margin-left:2px; }
 .checklist-subs { margin:0 0 6px 34px; display:flex; flex-direction:column; gap:3px; }
 .checklist-sub { display:flex; align-items:center; gap:8px; font-size:13px; }
 .checklist-sub-box { flex:none; width:16px; height:16px; border:2px solid var(--border); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; line-height:1; transition:all .14s ease; }
@@ -2844,6 +2852,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   var MISSION_PENALTY = 25;
   var DUE_PENALTY = 10;
+  var SIZE_META = { g: { label: "Grande", short: "G", max: 1, color: "#C7402E" }, m: { label: "M\xE9dia", short: "M", max: 3, color: "#E0952B" }, p: { label: "Pequena", short: "P", max: 5, color: "#1E7F5C" } };
   function rolloverUnfinishedChecklist() {
     const notes = storage_default.get("notes") || {};
     const today = todayStr();
@@ -2982,9 +2991,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <div class="checklist-block">
           <div class="checklist-item ${item.mission ? "mission " : ""}${item.done ? "done" : ""}" id="cli-${i}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
-            <div class="checklist-text" style="flex:1;cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
-              <span>${item.mission ? "⚔️ " : ""}${esc2(item.text)}${subs.length ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Sub-itens">☑ ${subDone}/${subs.length}</span>` : ""}${item.desc ? ` <span style="color:var(--muted);font-size:11px">️\u{1F4C4}</span>` : ""}${item.movedFrom ? ` <span class="badge badge-blue" style="font-size:9px;vertical-align:middle" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504} ${fmtDateBR(item.movedFrom)}</span>` : ""}</span>
-              ${item.desc ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${esc2(item.desc)}</div>` : ""}
+            <div class="checklist-text" style="cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
+              <div class="cl-line">
+                ${item.size && SIZE_META[item.size] ? `<span class="cl-size" style="background:${SIZE_META[item.size].color}" title="${SIZE_META[item.size].label}">${SIZE_META[item.size].short}</span>` : ""}
+                <span class="cl-title">${item.mission ? "⚔️ " : ""}${esc2(item.text)}</span>
+                ${subs.length ? `<span class="badge badge-blue" style="font-size:9px;flex:none" title="Sub-itens">☑ ${subDone}/${subs.length}</span>` : ""}
+                ${item.desc ? `<span style="color:var(--muted);font-size:11px;flex:none">\u{1F4C4}</span>` : ""}
+                ${item.movedFrom ? `<span class="badge badge-blue" style="font-size:9px;flex:none" title="Veio de ${fmtDateBR(item.movedFrom)} sem ser conclu\xEDdo">\u{1F504}</span>` : ""}
+              </div>
+              ${item.desc ? `<div class="cl-desc">${esc2(item.desc)}</div>` : ""}
             </div>
             ${item.due ? `<span class="badge badge-${overdue ? "red" : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
             <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
@@ -3021,6 +3036,21 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       window._subCollect = () => window._subState.map((s) => ({ text: (s.text || "").trim(), done: !!s.done })).filter((s) => s.text);
       const _subEditorHTML = `<div class="form-group"><label>Sub-checklist (itens da atividade)</label><div id="chk-subs"></div><button class="btn btn-ghost btn-sm" onclick="window._subAdd()">+ item</button></div>`;
       const _missionCount = (excludeIdx) => ((storage_default.get("notes")[activeDate]?.checklist) || []).filter((x, i) => x.mission && i !== excludeIdx).length;
+      const _sizeCount = (sz, excludeIdx) => ((storage_default.get("notes")[activeDate]?.checklist) || []).filter((x, i) => x.size === sz && i !== excludeIdx).length;
+      const _sizeSelectorHTML = (current, excludeIdx) => {
+        const opts = Object.entries(SIZE_META).map(([k, m]) => {
+          const cnt = _sizeCount(k, excludeIdx);
+          const full = cnt >= m.max && current !== k;
+          return `<button type="button" onclick="window._pickSize('${k}',this)" ${full ? "disabled" : ""} class="sz-opt${current === k ? " on" : ""}" style="--szc:${m.color}${full ? ";opacity:.4;cursor:not-allowed" : ""}">${m.label} <b>${cnt}/${m.max}</b></button>`;
+        }).join("");
+        return `<div class="form-group"><label>Tamanho (limite por dia: 1 Grande \xB7 3 M\xE9dias \xB7 5 Pequenas)</label>
+          <input type="hidden" id="chk-size" value="${current || ""}">
+          <div class="sz-group"><button type="button" onclick="window._pickSize('',this)" class="sz-opt${current ? "" : " on"}">Nenhum</button>${opts}</div></div>`;
+      };
+      window._pickSize = (k, btn) => {
+        const inp = document.getElementById("chk-size"); if (inp) inp.value = k;
+        btn.parentElement.querySelectorAll(".sz-opt").forEach((b) => b.classList.toggle("on", b === btn));
+      };
       const _missionToggleHTML = (checked, excludeIdx) => {
         const cnt = _missionCount(excludeIdx);
         const full = cnt >= 3 && !checked;
@@ -3037,6 +3067,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         window._modalContent(`
         <div class="modal-title">\u2705 Nova atividade</div>
         <div class="form-group"><label>T\xEDtulo da atividade</label><input id="chk-title" placeholder="Ex: Enviar proposta"></div>
+        ${_sizeSelectorHTML("", -1)}
         ${_missionToggleHTML(false, -1)}
         <div class="form-group"><label>Descri\xE7\xE3o (opcional)</label><textarea id="chk-desc" placeholder="Detalhes da atividade..." style="min-height:100px;resize:vertical"></textarea></div>
         ${_subEditorHTML}
@@ -3054,9 +3085,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           const subs = window._subCollect();
           let mission = !!document.getElementById("chk-mission")?.checked;
           if (mission && _missionCount(-1) >= 3) { mission = false; showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); }
+          let size = document.getElementById("chk-size")?.value || "";
+          if (size && SIZE_META[size] && _sizeCount(size, -1) >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido hoje.`); size = ""; }
           storage_default.update("notes", (ns) => {
             if (!ns[activeDate]) ns[activeDate] = { checklist: [], text: "", mood: "" };
-            ns[activeDate].checklist.push({ text, desc, done: false, due, subs, mission });
+            ns[activeDate].checklist.push({ text, desc, done: false, due, subs, mission, size });
             return ns;
           });
           window._closeModal();
@@ -3113,6 +3146,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         window._modalContent(`
         <div class="modal-title">${item.done ? "✓ " : ""}Atividade</div>
         <div class="form-group"><label>T\xEDtulo</label><input id="ci-title" value="${eqa(item.text || "")}"></div>
+        ${_sizeSelectorHTML(item.size || "", i)}
         ${_missionToggleHTML(!!item.mission, i)}
         <div class="form-group"><label>Descri\xE7\xE3o</label><textarea id="ci-desc" style="min-height:110px;resize:vertical" placeholder="Detalhes da atividade...">${esc2(item.desc || "")}</textarea></div>
         ${_subEditorHTML}
@@ -3129,7 +3163,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           const subs = window._subCollect();
           let mission = !!document.getElementById("chk-mission")?.checked;
           if (mission && _missionCount(idx) >= 3) { mission = false; showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); }
-          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; it.mission = mission; } return ns; });
+          let size = document.getElementById("chk-size")?.value || "";
+          if (size && SIZE_META[size] && _sizeCount(size, idx) >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido hoje.`); size = item.size || ""; }
+          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; it.mission = mission; it.size = size; } return ns; });
           window._closeModal();
           renderPanels();
         };
