@@ -2878,6 +2878,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   var MISSION_PENALTY = 25;
   var DUE_PENALTY = 10;
   var SIZE_META = { g: { label: "Grande", short: "G", max: 1, color: "#C7402E" }, m: { label: "M\xE9dia", short: "M", max: 3, color: "#E0952B" }, p: { label: "Pequena", short: "P", max: 5, color: "#1E7F5C" } };
+  var SIZE_RANK = { g: 0, m: 1, p: 2 };
+  function _szRank(it) { return (it && it.size != null && SIZE_RANK[it.size] != null) ? SIZE_RANK[it.size] : 3; }
   function rolloverUnfinishedChecklist() {
     const notes = storage_default.get("notes") || {};
     const today = todayStr();
@@ -3008,7 +3010,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         </div>`;
       })()}
       <div id="checklist-items">
-        ${(note.checklist || []).map((item, i) => {
+        ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => _szRank(a.item) - _szRank(b.item)).map(({ item, i }) => {
         const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
         const subs = item.subs || [];
         const subDone = subs.filter((s) => s.done).length;
