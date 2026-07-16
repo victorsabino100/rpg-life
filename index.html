@@ -2855,6 +2855,35 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   var SIZE_META = { g: { label: "Grande", short: "G", max: 1, color: "#C7402E" }, m: { label: "M\xE9dia", short: "M", max: 3, color: "#E0952B" }, p: { label: "Pequena", short: "P", max: 5, color: "#1E7F5C" } };
   var SIZE_RANK = { g: 0, m: 1, p: 2 };
   function _szRank(it) { return (it && it.size != null && SIZE_RANK[it.size] != null) ? SIZE_RANK[it.size] : 3; }
+  // Unifica missões do dia: o checklist (notes de hoje, itens com mission:true) é a fonte;
+  // espelhamos em `tasks` (com _mirror) para aparecer na Sala inicial (dashboard).
+  function syncMissionsToTasks() {
+    const today = todayStr();
+    const todayDS = (/* @__PURE__ */ new Date()).toDateString();
+    const notes = storage_default.get("notes") || {};
+    const cl = (notes[today] && Array.isArray(notes[today].checklist)) ? notes[today].checklist : [];
+    const missions = cl.filter((x) => x.mission);
+    let notesChanged = false;
+    missions.forEach((m) => { if (!m.mid) { m.mid = "ms" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); notesChanged = true; } });
+    if (notesChanged) storage_default.set("notes", notes);
+    let tasks = storage_default.get("tasks") || [];
+    const midSet = new Set(missions.map((m) => m.mid));
+    let changed = false;
+    const kept = tasks.filter((t) => !t._mirror || midSet.has(t.mid));
+    if (kept.length !== tasks.length) { tasks = kept; changed = true; }
+    const XPBYSIZE = { g: 25, m: 15, p: 10 };
+    missions.forEach((m) => {
+      const xp = XPBYSIZE[m.size] || 15;
+      let t = tasks.find((x) => x._mirror && x.mid === m.mid);
+      if (!t) {
+        tasks.unshift({ id: m.mid, mid: m.mid, name: m.text || "Miss\xE3o", attr: "mente", diff: "medio", xp, done: !!m.done, date: todayDS, _mirror: true, size: m.size || "" });
+        changed = true;
+      } else if (t.name !== (m.text || "Miss\xE3o") || t.done !== !!m.done || t.xp !== xp || t.date !== todayDS || t.size !== (m.size || "")) {
+        t.name = m.text || "Miss\xE3o"; t.done = !!m.done; t.xp = xp; t.date = todayDS; t.size = m.size || ""; changed = true;
+      }
+    });
+    if (changed) storage_default.set("tasks", tasks);
+  }
   function rolloverUnfinishedChecklist() {
     const notes = storage_default.get("notes") || {};
     const today = todayStr();
@@ -2964,26 +2993,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       ).join("")}
         </div>
       </div>
-      ${(() => {
-        const _mi = (t) => { try { return t.date ? new Date(t.date).toISOString().slice(0, 10) : todayStr(); } catch (e) { return todayStr(); } };
-        const prios = (storage_default.get("tasks") || []).filter((t) => _mi(t) === activeDate);
-        if (!prios.length) return "";
-        return `
-        <div class="checklist-prio-label">⚔️ Prioridades do dia — sala inicial</div>
-        <div id="checklist-prios">
-          ${prios.map((t) => {
-          const attr = (typeof ATTRS !== "undefined" && ATTRS[t.attr]) ? ATTRS[t.attr] : { emoji: "⚔️" };
-          return `
-            <div class="checklist-item priority ${t.done ? "done" : ""}">
-              <div class="checklist-check ${t.done ? "done" : ""}" onclick="window._togglePrioMission('${t.id}')">${t.done ? "✓" : ""}</div>
-              <div class="checklist-text" style="flex:1;cursor:pointer" onclick="window._togglePrioMission('${t.id}')">
-                <span>${attr.emoji} ${esc2(t.name)}</span>
-              </div>
-              <span class="checklist-prio-xp">+${t.xp} XP</span>
-            </div>`;
-        }).join("")}
-        </div>`;
-      })()}
       <div id="checklist-items">
         ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => _szRank(a.item) - _szRank(b.item)).map(({ item, i }) => {
         const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
@@ -7652,6 +7661,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     return ((storage_default.get("library") || {}).books || []).filter((b) => b.status === "done").length;
   }
   function renderDashboard2() {
+    syncMissionsToTasks();
     const char = storage_default.get("character");
     const tier = getTier(char.level);
     const p = progress(char.totalXP);
@@ -7816,6 +7826,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       storage_default.set("tasks", arr);
       if (t.done && !wasDone) { addXP(t.xp, t.attr); checkStreak(); }
       else if (!t.done && wasDone) { addXP(-t.xp, t.attr); }
+      if (t._mirror && t.mid) {
+        const today = todayStr();
+        storage_default.update("notes", (ns) => { const cl = ns[today] && ns[today].checklist; if (cl) { const m = cl.find((x) => x.mid === t.mid); if (m) m.done = t.done; } return ns; });
+      }
       renderDashboard2();
     };
     window._trilhaAddIdea = () => {
@@ -7929,6 +7943,43 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       if (!name) return;
       const diff = document.getElementById("t-diff").value;
       storage_default.update("tasks", (ts) => [{ id: Date.now().toString(), name, attr: document.getElementById("t-attr").value, diff, xp: xpMap[diff], done: false, date: (/* @__PURE__ */ new Date()).toDateString(), createdAt: (/* @__PURE__ */ new Date()).toISOString() }, ...ts]);
+      window._closeModal();
+      renderDashboard2();
+    };
+  };
+  // Unificação: "+nova meta" da Sala inicial cria uma missão do dia no checklist (fonte única)
+  window._openAddTask = () => {
+    const today = todayStr();
+    const clNow = (storage_default.get("notes")[today]?.checklist) || [];
+    if (clNow.filter((x) => x.mission).length >= 3) { showToast("J\xE1 h\xE1 3 miss\xF5es do dia — conclua ou remova uma antes."); return; }
+    const szOpts = Object.entries(SIZE_META).map(([k, m]) => {
+      const cnt = clNow.filter((x) => x.size === k).length;
+      const full = cnt >= m.max;
+      return `<option value="${k}" ${full ? "disabled" : ""} ${k === "m" && !full ? "selected" : ""}>${m.label} (${cnt}/${m.max})</option>`;
+    }).join("");
+    window._modalContent(`
+    <div class="modal-title">⚔️ Nova miss\xE3o do dia</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Aparece aqui na Sala inicial e tamb\xE9m no checklist de Planejamento.</div>
+    <div class="form-group"><label>O que precisa ser feito?</label><input id="t-name" placeholder="Ex: Enviar proposta"></div>
+    <div class="form-group"><label>Tamanho (limite/dia: 1 Grande \xB7 3 M\xE9dias \xB7 5 Pequenas)</label>
+      <select id="t-size"><option value="">Sem tamanho</option>${szOpts}</select>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="window._saveTask()">Criar miss\xE3o ⚔️</button>
+  `);
+    setTimeout(() => { const n = document.getElementById("t-name"); if (n) n.focus(); }, 50);
+    window._saveTask = () => {
+      const name = document.getElementById("t-name").value.trim();
+      if (!name) return;
+      let size = document.getElementById("t-size").value || "";
+      const cl = (storage_default.get("notes")[today]?.checklist) || [];
+      if (cl.filter((x) => x.mission).length >= 3) { showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); return; }
+      if (size && SIZE_META[size] && cl.filter((x) => x.size === size).length >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido — criada sem tamanho.`); size = ""; }
+      storage_default.update("notes", (ns) => {
+        if (!ns[today]) ns[today] = { checklist: [], text: "", mood: "" };
+        ns[today].checklist.push({ text: name, desc: "", done: false, due: null, subs: [], mission: true, size });
+        return ns;
+      });
+      syncMissionsToTasks();
       window._closeModal();
       renderDashboard2();
     };
