@@ -1043,31 +1043,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }catch(e){}
 })();
 </script>
-<div id="preview-ribbon" style="position:fixed;top:0;right:0;z-index:99999;background:linear-gradient(120deg,#7C83FF,#FF7A6B);color:#fff;font:700 12px/1 'Public Sans',sans-serif;padding:7px 14px;border-bottom-left-radius:12px;letter-spacing:.06em;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none">🎨 PRÉVIA · sandbox visual</div>
-<script>
-(function(){
-  try{
-    if(localStorage.getItem('rpgx_char')) return;
-    var t="2026-07-16";
-    var S=function(k,v){localStorage.setItem(k,JSON.stringify(v));};
-    S('rpgx_char',{name:'Aventureiro',emoji:'🧙',totalXP:65,coins:29,workCoins:12,level:1,attrs:{saude:{xp:20,level:2},mente:{xp:15,level:1},riqueza:{xp:10,level:1},relacionamentos:{xp:8,level:1},carreira:{xp:7,level:1},espiritual:{xp:5,level:1}},achievements:['first_task'],streak:3,lastActive:new Date().toDateString(),avatar:{skin:'#EBB58E',hair:'curto',hairColor:'#3a2a20'}});
-    S('rpgx_tasks',[{id:'t1',name:'Meditar 15 minutos',area:'mente',xp:25,done:true,date:new Date().toDateString()},{id:'t2',name:'Treino de força',area:'saude',xp:50,done:false,date:new Date().toDateString()},{id:'t3',name:'Ler 20 páginas',area:'mente',xp:25,done:false,date:new Date().toDateString()},{id:'t4',name:'Ligar para cliente',area:'carreira',xp:25,done:false,date:new Date().toDateString()}]);
-    S('rpgx_fin',{incomes:[{id:'i1',name:'Salário',amount:8000,category:'',date:t}],fixedExpenses:[{id:'f1',name:'Aluguel',amount:2200,category:'Casa',date:t,status:'pending'},{id:'f2',name:'Internet',amount:120,category:'Casa',date:t,status:'paid'}],variableExpenses:[{id:'v1',name:'Mercado',amount:450,category:'Alimentação',date:t,status:'pending'}],debts:[],savings:[{id:'s1',name:'Reserva',amount:5000}],creditCards:[{id:'c1',bank:'Nubank',last4:'4821',limit:12000,color:'linear-gradient(135deg,#820ad1,#c44dff)'}],bankAccounts:[],customCategories:{fixed:['Casa','Pessoal'],variable:['Alimentação','Transporte','Lazer']},goals:[]});
-    S('rpgx_obj',[{id:'o1',title:'Correr uma maratona',stage:'andamento',milestones:[{id:'m1',text:'5km',done:true},{id:'m2',text:'10km',done:true},{id:'m3',text:'21km',done:false}]},{id:'o2',title:'Abrir segunda filial',stage:'planejando',milestones:[{id:'m4',text:'Achar ponto',done:false}]},{id:'o3',title:'Aprender inglês fluente',stage:'sonho',milestones:[]}]);
-    S('rpgx_insights',[{id:'n1',title:'Ideia de conteúdo',content:'Série sobre produtividade #marketing liga com [[Funil]]',tags:['marketing'],updatedAt:Date.now()},{id:'n2',title:'Funil',content:'Topo, meio, fundo #marketing',tags:['marketing'],updatedAt:Date.now()}]);
-    S('rpgx_lib',{books:[{id:'b1',title:'Hábitos Atômicos',author:'James Clear',status:'lendo',category:'Desenvolvimento pessoal'},{id:'b2',title:'A Startup Enxuta',author:'Eric Ries',status:'desejo',category:'Empreendedorismo'}],courses:[{id:'cu1',name:'Tráfego Pago Pro',status:'estudando',modules:[{id:'md1',name:'Meta Ads',done:true},{id:'md2',name:'Otimização',done:false}]}],categories:['Desenvolvimento pessoal','Empreendedorismo','Espiritual','Técnico']});
-    S('rpgx_crm',{stages:[{id:'s1',name:'Novo lead',color:'#3b82f6'},{id:'s2',name:'Reunião',color:'#8b5cf6'},{id:'s3',name:'Proposta',color:'#f59e0b'},{id:'s4',name:'Fechou',color:'#10b981',won:true}],leads:[{id:'l1',name:'Clínica Vida',stage:'s1',value:3000,origin:'Instagram'},{id:'l2',name:'Loja CarPlay',stage:'s2',value:5000,origin:'Indicação'},{id:'l3',name:'Dra. Julia',stage:'s4',value:4500,origin:'Site'}]});
-    S('rpgx_shop',[{id:'sh1',name:'Monitor 27"',category:'Eletrônicos',priority:'high',bought:false},{id:'sh2',name:'Tênis de corrida',category:'Saúde',priority:'med',bought:false},{id:'sh3',name:'Café especial',category:'Alimentação',priority:'low',bought:true}]);
-    S('rpgx_rewards',{items:[{id:'r1',name:'Jogar 1h de Vídeo Game',cost:120,icon:'🎮',category:'Lazer',currency:'vida'},{id:'r2',name:'Sair para comer',cost:350,icon:'🍕',category:'Alimentação',currency:'trabalho'}],redeemed:[{id:'r3',name:'Pausa de 30min',cost:30,icon:'☕',category:'Descanso',currency:'vida'}],history:[]});
-    S('rpgx_timeline',[{id:'tl1',date:t,ts:Date.now(),area:'mente',icon:'🧠',text:'Missão: Meditar 15 minutos'},{id:'tl2',date:t,ts:Date.now()-3600000,area:'saude',icon:'🏋️',text:'Treino concluído'}]);
-    S('rpgx_daymoods',{[t]:4});
-    S('rpgx_spiritual',{folders:[{id:'f_preg',name:'Pregações',icon:'📖',kind:'sermon',notes:[{id:'sp1',title:'Fé e ação',content:'Tiago 2:17',updatedAt:Date.now()}]},{id:'f_devo',name:'Devocional',icon:'🙏',kind:'devotional',notes:[]}]});
-    S('rpgx_flows',{items:[{id:'fldemo',name:'Estrutura da Sato',updatedAt:Date.now(),nodes:[{id:'r',x:700,y:560,text:'Sato Marketing',color:'#8A90A6'},{id:'a',x:960,y:460,text:'Tráfego',color:'#56C2F5'},{id:'b',x:960,y:560,text:'Conteúdo',color:'#C079F6'},{id:'c',x:960,y:660,text:'Comercial',color:'#FF7A6B'},{id:'a1',x:1200,y:460,text:'Meta Ads',color:'#7C83FF'}],edges:[{a:'r',b:'a'},{a:'r',b:'b'},{a:'r',b:'c'},{a:'a',b:'a1'}]}]});
-    S('rpgx_meals',{plan:{m3:{Seg:'Frango + arroz'}},log:{[t]:{m1:true}},slots:[{id:'m1',label:'Café da manhã',time:'07:00'},{id:'m2',label:'Lanche',time:'10:00'},{id:'m3',label:'Almoço',time:'12:30'},{id:'m4',label:'Lanche',time:'16:00'},{id:'m5',label:'Jantar',time:'20:00'}]});
-    S('rpgx_habits',{workouts:[],templates:[{id:'h1',name:'Treino A - Peito/Tríceps',exercises:[]},{id:'h2',name:'Treino B - Costas/Bíceps',exercises:[]}],log:[]});
-  }catch(e){}
-})();
-</script>
+
   <div id="app">
     <button id="mobile-menu-btn" onclick="window._toggleSidebar()" aria-label="Abrir menu">☰</button>
     <div id="sidebar-backdrop" onclick="window._closeSidebar()"></div>
@@ -2905,6 +2881,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   var SIZE_META = { g: { label: "Grande", short: "G", max: 1, color: "#C7402E" }, m: { label: "M\xE9dia", short: "M", max: 3, color: "#E0952B" }, p: { label: "Pequena", short: "P", max: 5, color: "#1E7F5C" } };
   var SIZE_RANK = { g: 0, m: 1, p: 2 };
   function _szRank(it) { return (it && it.size != null && SIZE_RANK[it.size] != null) ? SIZE_RANK[it.size] : 3; }
+  // XP por tamanho: Grande 15 · Média 10 · Pequena 5 (sem tamanho = 10)
+  function _xpForSize(sz) { return sz === "g" ? 15 : sz === "p" ? 5 : 10; }
+  function _clArea(it) { return (it && it.area && ATTRS[it.area]) ? it.area : "mente"; }
+  // Estado de prazo p/ colorir: verde=feito, vermelho=vencido, amarelo=<2h, azul=no prazo
+  function _dueState(item) {
+    if (!item || !item.due) return null;
+    if (item.done) return { key: "done", color: "#1E9E73", badge: "green" };
+    const now = Date.now();
+    const due = new Date(item.due).getTime();
+    if (isNaN(due)) return null;
+    if (due < now) return { key: "late", color: "#DB5648", badge: "red" };
+    if (due - now <= 2 * 3600 * 1e3) return { key: "soon", color: "#E0A93B", badge: "gold" };
+    return { key: "ok", color: "#42B2DD", badge: "blue" };
+  }
   // Unifica missões do dia: o checklist (notes de hoje, itens com mission:true) é a fonte;
   // espelhamos em `tasks` (com _mirror) para aparecer na Sala inicial (dashboard).
   function syncMissionsToTasks() {
@@ -2921,15 +2911,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     let changed = false;
     const kept = tasks.filter((t) => !t._mirror || midSet.has(t.mid));
     if (kept.length !== tasks.length) { tasks = kept; changed = true; }
-    const XPBYSIZE = { g: 25, m: 15, p: 10 };
     missions.forEach((m) => {
-      const xp = XPBYSIZE[m.size] || 15;
+      const xp = _xpForSize(m.size);
+      const attr = _clArea(m);
       let t = tasks.find((x) => x._mirror && x.mid === m.mid);
       if (!t) {
-        tasks.unshift({ id: m.mid, mid: m.mid, name: m.text || "Miss\xE3o", attr: "mente", diff: "medio", xp, done: !!m.done, date: todayDS, _mirror: true, size: m.size || "" });
+        tasks.unshift({ id: m.mid, mid: m.mid, name: m.text || "Miss\xE3o", attr, diff: "medio", xp, done: !!m.done, date: todayDS, _mirror: true, size: m.size || "" });
         changed = true;
-      } else if (t.name !== (m.text || "Miss\xE3o") || t.done !== !!m.done || t.xp !== xp || t.date !== todayDS || t.size !== (m.size || "")) {
-        t.name = m.text || "Miss\xE3o"; t.done = !!m.done; t.xp = xp; t.date = todayDS; t.size = m.size || ""; changed = true;
+      } else if (t.name !== (m.text || "Miss\xE3o") || t.done !== !!m.done || t.xp !== xp || t.date !== todayDS || t.size !== (m.size || "") || t.attr !== attr) {
+        t.name = m.text || "Miss\xE3o"; t.done = !!m.done; t.xp = xp; t.date = todayDS; t.size = m.size || ""; t.attr = attr; changed = true;
       }
     });
     if (changed) storage_default.set("tasks", tasks);
@@ -3044,13 +3034,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         </div>
       </div>
       <div id="checklist-items">
-        ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => _szRank(a.item) - _szRank(b.item)).map(({ item, i }) => {
-        const overdue = item.due && !item.done && item.due < (/* @__PURE__ */ new Date()).toISOString();
+        ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => ((a.item.done ? 1 : 0) - (b.item.done ? 1 : 0)) || (_szRank(a.item) - _szRank(b.item))).map(({ item, i }) => {
+        const dueSt = _dueState(item);
         const subs = item.subs || [];
         const subDone = subs.filter((s) => s.done).length;
         return `
           <div class="checklist-block">
-          <div class="checklist-item ${item.mission ? "mission " : ""}${item.done ? "done" : ""}" id="cli-${i}">
+          <div class="checklist-item ${item.mission ? "mission " : ""}${item.done ? "done" : ""}" id="cli-${i}" style="${dueSt ? `border-left:3px solid ${dueSt.color}` : ""}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
             <div class="checklist-text" style="cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
               <div class="cl-line">
@@ -3062,7 +3052,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
               </div>
               ${item.desc ? `<div class="cl-desc">${esc2(item.desc)}</div>` : ""}
             </div>
-            ${item.due ? `<span class="badge badge-${overdue ? "red" : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
+            ${item.due ? `<span class="badge badge-${dueSt ? dueSt.badge : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
             <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
             <button class="checklist-del" onclick="window._delCheck(${i})">\u2715</button>
           </div>
@@ -3112,6 +3102,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         const inp = document.getElementById("chk-size"); if (inp) inp.value = k;
         btn.parentElement.querySelectorAll(".sz-opt").forEach((b) => b.classList.toggle("on", b === btn));
       };
+      const _areaSelectorHTML = (current) => {
+        const cur = (current && ATTRS[current]) ? current : "mente";
+        const opts = Object.entries(ATTRS).map(([k, a]) => `<option value="${k}" ${k === cur ? "selected" : ""}>${a.name}</option>`).join("");
+        return `<div class="form-group"><label>\xC1rea da vida (pra onde vai a pontua\xE7\xE3o)</label>
+          <select id="chk-area">${opts}</select></div>`;
+      };
       const _missionToggleHTML = (checked, excludeIdx) => {
         const cnt = _missionCount(excludeIdx);
         const full = cnt >= 3 && !checked;
@@ -3128,6 +3124,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         window._modalContent(`
         <div class="modal-title">\u2705 Nova atividade</div>
         <div class="form-group"><label>T\xEDtulo da atividade</label><input id="chk-title" placeholder="Ex: Enviar proposta"></div>
+        ${_areaSelectorHTML("mente")}
         ${_sizeSelectorHTML("", -1)}
         ${_missionToggleHTML(false, -1)}
         <div class="form-group"><label>Descri\xE7\xE3o (opcional)</label><textarea id="chk-desc" placeholder="Detalhes da atividade..." style="min-height:100px;resize:vertical"></textarea></div>
@@ -3148,9 +3145,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (mission && _missionCount(-1) >= 3) { mission = false; showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); }
           let size = document.getElementById("chk-size")?.value || "";
           if (size && SIZE_META[size] && _sizeCount(size, -1) >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido hoje.`); size = ""; }
+          const area = document.getElementById("chk-area")?.value || "mente";
           storage_default.update("notes", (ns) => {
             if (!ns[activeDate]) ns[activeDate] = { checklist: [], text: "", mood: "" };
-            ns[activeDate].checklist.push({ text, desc, done: false, due, subs, mission, size });
+            ns[activeDate].checklist.push({ text, desc, done: false, due, subs, mission, size, area });
             return ns;
           });
           window._closeModal();
@@ -3183,19 +3181,20 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         renderPanels();
       };
       window._toggleCheck = (i) => {
-        let isNowDone = false, itemText = "";
+        let isNowDone = false, itemText = "", itemXp = 10, itemArea = "mente";
         storage_default.update("notes", (ns) => {
           const item = ns[activeDate].checklist[i];
           item.done = !item.done;
           isNowDone = item.done; itemText = item.text || "";
+          itemXp = _xpForSize(item.size); itemArea = _clArea(item);
           item.doneAt = item.done ? Date.now() : null;
           return ns;
         });
         if (isNowDone) {
           checkStreak();
-          addXP(10, "mente");
-          logTimeline("mente", "✓", "Atividade conclu\xEDda: " + itemText, null);
-        } else { addXP(-10, "mente"); removeTimelineByName(itemText); }
+          addXP(itemXp, itemArea);
+          logTimeline(itemArea, "✓", "Atividade conclu\xEDda: " + itemText, null);
+        } else { addXP(-itemXp, itemArea); removeTimelineByName(itemText); }
         renderPanels();
         renderDateList();
       };
@@ -3207,6 +3206,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         window._modalContent(`
         <div class="modal-title">${item.done ? "✓ " : ""}Atividade</div>
         <div class="form-group"><label>T\xEDtulo</label><input id="ci-title" value="${eqa(item.text || "")}"></div>
+        ${_areaSelectorHTML(item.area || "mente")}
         ${_sizeSelectorHTML(item.size || "", i)}
         ${_missionToggleHTML(!!item.mission, i)}
         <div class="form-group"><label>Descri\xE7\xE3o</label><textarea id="ci-desc" style="min-height:110px;resize:vertical" placeholder="Detalhes da atividade...">${esc2(item.desc || "")}</textarea></div>
@@ -3226,7 +3226,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (mission && _missionCount(idx) >= 3) { mission = false; showToast("J\xE1 h\xE1 3 miss\xF5es do dia."); }
           let size = document.getElementById("chk-size")?.value || "";
           if (size && SIZE_META[size] && _sizeCount(size, idx) >= SIZE_META[size].max) { showToast(`Limite de ${SIZE_META[size].label} atingido hoje.`); size = item.size || ""; }
-          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; it.mission = mission; it.size = size; } return ns; });
+          const area = document.getElementById("chk-area")?.value || "mente";
+          storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[idx]; if (it) { it.text = text; it.desc = desc; it.due = due; it.subs = subs; it.mission = mission; it.size = size; it.area = area; } return ns; });
           window._closeModal();
           renderPanels();
         };
@@ -3834,14 +3835,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       notes.forEach((n) => { const f = (n.tags && n.tags[0]) ? n.tags[0] : "\u2014 Sem pasta"; (groups[f] = groups[f] || []).push(n); });
       const names = Object.keys(groups).sort((a, b) => a === "\u2014 Sem pasta" ? 1 : b === "\u2014 Sem pasta" ? -1 : a.localeCompare(b));
       body = names.map((f) => {
-        const open = window._knOpen[f] !== false;
+        const open = window._knOpen[f] === true;
         const items = groups[f].map(noteItem).join("");
         const fe = f.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         return `<div class="kn-folder"><div class="kn-folder-head" onclick="window._knFolderToggle('${fe}')"><span class="kn-chev ${open ? "open" : ""}">\u203A</span><span class="kn-folder-name">${f === "\u2014 Sem pasta" ? f : "#" + f}</span><span class="kn-folder-count">${groups[f].length}</span></div><div class="kn-folder-body" style="${open ? "" : "display:none"}">${items}</div></div>`;
       }).join("");
     }
     el.innerHTML = tagCloud + body;
-    window._knFolderToggle = (f) => { window._knOpen[f] = window._knOpen[f] === false; renderNoteList(document.getElementById("kn-search")?.value || ""); };
+    window._knFolderToggle = (f) => { window._knOpen[f] = window._knOpen[f] !== true; renderNoteList(document.getElementById("kn-search")?.value || ""); };
     window._knSearchTag = (t) => {
       const inp = document.getElementById("kn-search");
       if (inp) inp.value = "#" + t;
@@ -7272,7 +7273,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     <div class="card" style="padding:18px">
       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px">
         <div style="font-size:13px;color:var(--muted)">${totalActs} realiza\xE7\xF5es no m\xEAs \xB7 clique num dia para ver os detalhes</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">${legend}<button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearTimeline()">\u{1F5D1} Limpar tudo</button></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">${legend}<button class="btn btn-primary btn-sm" onclick="window._tlAddManual()">✍️ Registrar algo que fiz</button><button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window._clearTimeline()">\u{1F5D1} Limpar tudo</button></div>
       </div>
       ${totalActs ? `<div style="display:flex;gap:2px;align-items:flex-end;overflow-x:auto;padding-bottom:4px">${bars}</div>` : `<div class="empty-state" style="margin:30px 0"><div class="empty-icon">\u{1F331}</div>Ainda n\xE3o h\xE1 realiza\xE7\xF5es registradas neste m\xEAs.<br>Conforme voc\xEA cumpre tarefas, elas aparecem aqui.</div>`}
     </div>
@@ -7290,6 +7291,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <div style="flex:1"><div style="font-size:14px">${esc(r.text)}</div></div>
         <span style="width:9px;height:9px;border-radius:50%;background:${(ATTRS[r.area] || ATTRS.mente).color}" title="${(ATTRS[r.area] || ATTRS.mente).name}"></span>
       </div>`).join("") : `<div style="color:var(--muted);font-size:13px">Nenhuma realiza\xE7\xE3o neste dia.</div>`}
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px" onclick="window._tlAddManual('${st.day}')">✍️ Registrar algo neste dia</button>
     </div>` : ""}`;
     window._tlNav = (dir) => {
       let [yy, mm] = st.ym.split("-").map(Number);
@@ -7308,6 +7310,29 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     window._tlMood = (mk) => {
       storage_default.update("dayMoods", (mo) => { mo = mo || {}; if (mo[st.day] === mk) delete mo[st.day]; else mo[st.day] = mk; return mo; });
       renderTimeline(container);
+    };
+    window._tlAddManual = (ds) => {
+      const day = ds || st.day || todayStr();
+      const opts = Object.entries(ATTRS).map(([k, a]) => `<option value="${k}">${a.name}</option>`).join("");
+      window._modalContent(`
+        <div class="modal-title">✍️ Registrar realiza\xE7\xE3o</div>
+        <div class="form-group"><label>O que voc\xEA fez?</label><textarea id="tlm-text" placeholder="Ex: Fechei um novo cliente" style="min-height:90px;resize:vertical"></textarea></div>
+        <div class="form-group"><label>Data</label><input type="date" id="tlm-date" value="${day}"></div>
+        <div class="form-group"><label>\xC1rea da vida</label><select id="tlm-area">${opts}</select></div>
+        <button class="btn btn-primary" style="width:100%" onclick="window._tlSaveManual()">Registrar</button>
+      `);
+      setTimeout(() => { const t = document.getElementById("tlm-text"); if (t) t.focus(); }, 50);
+    };
+    window._tlSaveManual = () => {
+      const text = (document.getElementById("tlm-text").value || "").trim();
+      if (!text) { showToast("Escreva o que voc\xEA fez."); return; }
+      const date = document.getElementById("tlm-date").value || todayStr();
+      const area = document.getElementById("tlm-area").value || "mente";
+      storage_default.update("timeline", (t) => { t = t || []; t.push({ id: "tl" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date, ts: Date.now(), area: ATTRS[area] ? area : "mente", icon: "✍️", text, meta: { manual: true } }); return t; });
+      window._closeModal();
+      st.ym = date.slice(0, 7); st.day = date;
+      renderTimeline(container);
+      showToast("✍️ Registrado na Linha do Tempo");
     };
   }
 
