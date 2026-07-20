@@ -2221,15 +2221,22 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       r.selectNodeContents(block);
       try { r.setEnd(range.startContainer, range.startOffset); } catch (err) { return; }
       var before = r.toString();
-      var ordered = null;
+      var ordered = null, startNum = null;
       if (before === "-" || before === "*") ordered = false;
-      else if (/^\d{1,3}\.$/.test(before)) ordered = true;
+      else if (/^\d{1,3}\.$/.test(before)) { ordered = true; startNum = parseInt(before, 10); }
       else return;
       e.preventDefault();
       sel.removeAllRanges(); sel.addRange(r);
       document.execCommand("delete");
       try { document.execCommand("styleWithCSS", false, false); } catch (e2) {}
       document.execCommand(ordered ? "insertOrderedList" : "insertUnorderedList");
+      // respeita o número escolhido: a nova lista começa nele e segue a sequência
+      if (ordered && startNum != null && !isNaN(startNum)) {
+        var an = window.getSelection().anchorNode;
+        an = an && an.nodeType === 3 ? an.parentElement : an;
+        var ol = an && an.closest ? an.closest("ol") : null;
+        if (ol) { if (startNum !== 1) ol.setAttribute("start", String(startNum)); else ol.removeAttribute("start"); }
+      }
       if (typeof save === "function") save();
     });
   };
