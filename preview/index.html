@@ -482,6 +482,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .checklist-check.done { background:var(--green); border-color:var(--green); color:#fff; }
 .checklist-text { flex:1; font-size:14px; min-width:0; overflow:hidden; }
 .cl-line { display:flex; align-items:center; gap:5px; min-width:0; }
+.cl-chev { flex:none; display:inline-block; transition:transform .15s ease; font-size:15px; line-height:1; color:var(--muted); font-weight:700; }
+.cl-chev.open { transform:rotate(90deg); }
 .cl-title { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
 .cl-desc { font-size:12px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cl-size { flex:none; font-family:var(--font-mono); font-size:9px; font-weight:700; padding:1px 6px; border-radius:100px; color:#fff; letter-spacing:.03em; }
@@ -3038,12 +3040,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         const dueSt = _dueState(item);
         const subs = item.subs || [];
         const subDone = subs.filter((s) => s.done).length;
+        const expanded = !!(window._clExpand && window._clExpand[i]);
         return `
           <div class="checklist-block">
           <div class="checklist-item ${item.mission ? "mission " : ""}${item.done ? "done" : ""}" id="cli-${i}" style="${dueSt ? `border-left:3px solid ${dueSt.color}` : ""}">
             <div class="checklist-check ${item.done ? "done" : ""}" onclick="window._toggleCheck(${i})">${item.done ? "\u2713" : ""}</div>
-            <div class="checklist-text" style="cursor:pointer" onclick="window._openCheckItem(${i})" title="Ver detalhes">
+            <div class="checklist-text" style="cursor:pointer" onclick="${subs.length ? `window._clToggleSubs(${i})` : `window._openCheckItem(${i})`}" title="${subs.length ? "Abrir/fechar checklist" : "Ver detalhes"}">
               <div class="cl-line">
+                ${subs.length ? `<span class="cl-chev${expanded ? " open" : ""}">›</span>` : ""}
                 ${item.size && SIZE_META[item.size] ? `<span class="cl-size" style="background:${SIZE_META[item.size].color}" title="${SIZE_META[item.size].label}">${SIZE_META[item.size].short}</span>` : ""}
                 <span class="cl-title">${item.mission ? "⚔️ " : ""}${esc2(item.text)}</span>
                 ${subs.length ? `<span class="badge badge-blue" style="font-size:9px;flex:none" title="Sub-itens">☑ ${subDone}/${subs.length}</span>` : ""}
@@ -3053,10 +3057,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
               ${item.desc ? `<div class="cl-desc">${esc2(item.desc)}</div>` : ""}
             </div>
             ${item.due ? `<span class="badge badge-${dueSt ? dueSt.badge : "gold"}" style="font-size:10px;white-space:nowrap" title="Prazo">\u23f0 ${fmtDueBR(item.due)}</span>` : ""}
+            ${subs.length ? `<button class="checklist-due-btn" onclick="window._openCheckItem(${i})" title="Editar tarefa">✏️</button>` : ""}
             <button class="checklist-due-btn" onclick="window._editDue(${i})" title="Definir prazo">\u{1F4C5}</button>
             <button class="checklist-del" onclick="window._delCheck(${i})">\u2715</button>
           </div>
-          ${subs.length ? `<div class="checklist-subs">${subs.map((s, j) => `<div class="checklist-sub ${s.done ? "done" : ""}"><div class="checklist-sub-box ${s.done ? "done" : ""}" onclick="window._toggleSub(${i},${j})">${s.done ? "\u2713" : ""}</div><span class="checklist-sub-txt">${esc2(s.text)}</span></div>`).join("")}</div>` : ""}
+          ${subs.length && expanded ? `<div class="checklist-subs">${subs.map((s, j) => `<div class="checklist-sub ${s.done ? "done" : ""}"><div class="checklist-sub-box ${s.done ? "done" : ""}" onclick="window._toggleSub(${i},${j})">${s.done ? "\u2713" : ""}</div><span class="checklist-sub-txt">${esc2(s.text)}</span></div>`).join("")}</div>` : ""}
           </div>
         `;
       }).join("")}
@@ -3065,6 +3070,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <button class="btn btn-primary btn-sm" style="width:100%" onclick="window._openAddCheck()">+ Nova atividade</button>
       </div>
     `;
+      window._clExpand = window._clExpand || {};
+      window._clToggleSubs = (i) => { window._clExpand[i] = !window._clExpand[i]; renderPanels(); };
       window._toggleSub = (i, j) => {
         storage_default.update("notes", (ns) => { const it = ns[activeDate].checklist[i]; if (it && it.subs && it.subs[j]) it.subs[j].done = !it.subs[j].done; return ns; });
         renderPanels();
