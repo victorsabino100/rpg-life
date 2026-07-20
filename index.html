@@ -3008,7 +3008,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         </div>
       </div>
       <div id="checklist-items">
-        ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => _szRank(a.item) - _szRank(b.item)).map(({ item, i }) => {
+        ${(note.checklist || []).map((item, i) => ({ item, i })).sort((a, b) => ((a.item.done ? 1 : 0) - (b.item.done ? 1 : 0)) || (_szRank(a.item) - _szRank(b.item))).map(({ item, i }) => {
         const dueSt = _dueState(item);
         const subs = item.subs || [];
         const subDone = subs.filter((s) => s.done).length;
@@ -3809,14 +3809,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       notes.forEach((n) => { const f = (n.tags && n.tags[0]) ? n.tags[0] : "\u2014 Sem pasta"; (groups[f] = groups[f] || []).push(n); });
       const names = Object.keys(groups).sort((a, b) => a === "\u2014 Sem pasta" ? 1 : b === "\u2014 Sem pasta" ? -1 : a.localeCompare(b));
       body = names.map((f) => {
-        const open = window._knOpen[f] !== false;
+        const open = window._knOpen[f] === true;
         const items = groups[f].map(noteItem).join("");
         const fe = f.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         return `<div class="kn-folder"><div class="kn-folder-head" onclick="window._knFolderToggle('${fe}')"><span class="kn-chev ${open ? "open" : ""}">\u203A</span><span class="kn-folder-name">${f === "\u2014 Sem pasta" ? f : "#" + f}</span><span class="kn-folder-count">${groups[f].length}</span></div><div class="kn-folder-body" style="${open ? "" : "display:none"}">${items}</div></div>`;
       }).join("");
     }
     el.innerHTML = tagCloud + body;
-    window._knFolderToggle = (f) => { window._knOpen[f] = window._knOpen[f] === false; renderNoteList(document.getElementById("kn-search")?.value || ""); };
+    window._knFolderToggle = (f) => { window._knOpen[f] = window._knOpen[f] !== true; renderNoteList(document.getElementById("kn-search")?.value || ""); };
     window._knSearchTag = (t) => {
       const inp = document.getElementById("kn-search");
       if (inp) inp.value = "#" + t;
