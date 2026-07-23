@@ -3538,18 +3538,32 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
     wireObjDrag();
   }
+  // Estado do prazo do objetivo: verde=concluído, vermelho=vencido, amarelo=≤7 dias, azul=no prazo
+  function _objDueState(obj) {
+    if (!obj || !obj.due) return null;
+    if (obj.stage === "concluido" || obj.rewarded) return { color: "#1E9E73", badge: "green", label: "conclu\xEDdo" };
+    const today = /* @__PURE__ */ new Date(); today.setHours(0, 0, 0, 0);
+    const due = new Date(obj.due + "T00:00:00");
+    if (isNaN(due.getTime())) return null;
+    const days = Math.round((due - today) / 864e5);
+    if (days < 0) return { color: "#DB5648", badge: "red", label: `atrasado ${-days}d` };
+    if (days === 0) return { color: "#E0A93B", badge: "gold", label: "hoje" };
+    if (days <= 7) return { color: "#E0A93B", badge: "gold", label: `faltam ${days}d` };
+    return { color: "#42B2DD", badge: "blue", label: `faltam ${days}d` };
+  }
   function renderObjCard(obj) {
     const done = (obj.milestones || []).filter((m) => m.done).length;
     const total = (obj.milestones || []).length;
     const pct = total ? Math.round(done / total * 100) : 0;
     const attr = ATTRS[obj.attr] || ATTRS.mente;
+    const dueSt = _objDueState(obj);
     return `
-    <div class="objective-card" data-oid="${obj.id}">
+    <div class="objective-card" data-oid="${obj.id}" style="${dueSt ? `border-left:3px solid ${dueSt.color}` : ""}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
         <div class="obj-title">${obj.title}</div>
         <span style="font-size:18px">${attr.emoji}</span>
       </div>
-      <div class="obj-area"><span class="badge badge-${attrBadge(obj.attr)}">${attr.name}</span></div>
+      <div class="obj-area"><span class="badge badge-${attrBadge(obj.attr)}">${attr.name}</span>${dueSt ? `<span class="badge badge-${dueSt.badge}" style="font-size:10px;margin-left:5px" title="Prazo">\u{1F4C5} ${fmtDateBR(obj.due)} \xB7 ${dueSt.label}</span>` : ""}</div>
       ${obj.desc ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">${obj.desc}</div>` : ""}
       <div class="obj-progress-bar"><div class="obj-progress-fill" style="width:${pct}%;background:${attr.color}"></div></div>
       <div class="obj-stats">
@@ -3627,6 +3641,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       </div>
     </div>
     <div class="form-group">
+      <label>Prazo (opcional)</label>
+      <input type="date" id="obj-due">
+    </div>
+    <div class="form-group">
       <label>Marcos (1 por linha)</label>
       <textarea id="obj-milestones" placeholder="Pesquisar o mercado&#10;Criar MVP&#10;Conseguir primeiro cliente" style="min-height:100px"></textarea>
     </div>
@@ -3638,11 +3656,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       const milestoneText = document.getElementById("obj-milestones").value;
       const milestones = milestoneText.split("\n").filter(Boolean).map((m) => ({ text: m.trim(), done: false }));
       const obj = {
-        id: Date.now().toString(),
+        id: "o" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         title,
         desc: document.getElementById("obj-desc").value.trim(),
         attr: document.getElementById("obj-attr").value,
         stage: document.getElementById("obj-stage").value,
+        due: document.getElementById("obj-due").value || null,
         milestones,
         createdAt: (/* @__PURE__ */ new Date()).toISOString()
       };
@@ -3657,9 +3676,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const stageOpts = STAGES.map((s) => `<option value="${s.key}" ${s.key === obj.stage ? "selected" : ""}>${s.label}</option>`).join("");
     window._modalContent(`
     <div class="modal-title">${obj.title}</div>
-    <div class="form-group">
-      <label>Mover para</label>
-      <select id="edit-stage" onchange="window._moveObj('${id}',this.value)">${stageOpts}</select>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Mover para</label>
+        <select id="edit-stage" onchange="window._moveObj('${id}',this.value)">${stageOpts}</select>
+      </div>
+      <div class="form-group">
+        <label>Prazo</label>
+        <input type="date" id="edit-obj-due" value="${obj.due || ""}" onchange="window._setObjDue('${id}',this.value)">
+      </div>
     </div>
     <div class="card-title" style="margin-top:12px">Marcos da Jornada</div>
     <div class="milestone-list" id="milestone-list">
@@ -3703,6 +3728,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         celebrate("\u{1F3AF} Objetivo conclu\xEDdo! +150 XP");
       }
       if (justUncompleted) addXP(-150, attrKey);
+      renderBoard();
+    };
+    window._setObjDue = (oid, v) => {
+      storage_default.update("objectives", (os) => { const o = os.find((x) => x.id === oid); if (o) o.due = v || null; return os; });
       renderBoard();
     };
     window._addMilestone = (oid) => {
