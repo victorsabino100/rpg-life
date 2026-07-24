@@ -1016,6 +1016,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     .rv-card { padding: 12px !important; }
     .task-item, .habit-row, .checklist-item, .tl-card { font-size: 13px; }
     .book-card, .reward-card { padding: 14px !important; }
+    /* Checklist mobile: título+texto em cima (linha inteira), selo de prazo e botões descem pra 2ª linha (sem sobrepor) */
+    .checklist-item { flex-wrap: wrap !important; row-gap: 6px; }
+    .checklist-text { flex: 1 1 58% !important; min-width: 58% !important; }
+    .checklist-item .badge { white-space: nowrap; }
+    .checklist-due-btn, .checklist-del { opacity: 1 !important; }
   }
   </style>
 </head>
@@ -1058,7 +1063,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <li data-section="objetivos">    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1.1"/></svg></span> Objetivos</li>
         <li data-section="linha">       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5-6 3.5 13 2.5-7H21"/></svg></span> Linha do Tempo</li>
         <li data-section="insights">     <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.4v11.2"/><path d="M12 6.4A3 3 0 0 0 6.5 4.9 2.7 2.7 0 0 0 4.4 8.5 2.7 2.7 0 0 0 4 13.3 2.8 2.8 0 0 0 6.8 16.9 2.6 2.6 0 0 0 12 17.4"/><path d="M12 6.4A3 3 0 0 1 17.5 4.9 2.7 2.7 0 0 1 19.6 8.5 2.7 2.7 0 0 1 20 13.3 2.8 2.8 0 0 1 17.2 16.9 2.6 2.6 0 0 1 12 17.4"/><path d="M7.6 9.4c1 .3 1.6 1 1.8 2"/><path d="M16.4 9.4c-1 .3-1.6 1-1.8 2"/></svg></span> Brainstorming</li>
-        <li data-section="espiritual">  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.6h4V8h4.4v4H14v8.4h-4V12H5.6V8H10z"/></svg></span> Jesus</li>
         <li data-section="financas">     <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8a2 2 0 0 1 2-2h10.5"/><rect x="3.5" y="7.5" width="17" height="12.5" rx="2.4"/><path d="M20.5 12.5h-4a1.6 1.6 0 0 0 0 3.2h4"/></svg></span> Finanças</li>
         <li data-section="comercial">    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16l-6.2 7v6.3l-3.6 1.7v-8z"/></svg></span> Comercial</li>
         <li data-section="treinos">      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7.2" y1="12" x2="16.8" y2="12"/><rect x="2.6" y="8.8" width="3" height="6.4" rx="1"/><rect x="18.4" y="8.8" width="3" height="6.4" rx="1"/><rect x="5.6" y="10" width="2.2" height="4" rx="0.8"/><rect x="16.2" y="10" width="2.2" height="4" rx="0.8"/></svg></span> Saúde</li>
@@ -6952,7 +6956,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const c = getSyncCfg();
     if (!syncConfigured()) return { ok: false, msg: "Sincroniza\xE7\xE3o n\xE3o configurada." };
     const url = normUrl(c.url);
-    const stamp = (/* @__PURE__ */ new Date()).toISOString();
+    const localMut = localStorage.getItem("rpg_mutated_at") || "";
+    const stamp = localMut || (/* @__PURE__ */ new Date()).toISOString();
     const body = [{ code: c.code, data: dataBlob(), updated_at: stamp }];
     try {
       const res = await fetch(`${url}/rest/v1/vaults?on_conflict=code`, {
@@ -6981,6 +6986,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       if (!rows.length) return { ok: true, changed: false, msg: "Nenhum dado na nuvem ainda (este c\xF3digo \xE9 novo)." };
       const remote = rows[0].data || {};
       const remoteAt = rows[0].updated_at || "";
+      // Anti-reversão: nunca sobrescreve dados locais editados mais recentemente que a nuvem.
+      const localMut = localStorage.getItem("rpg_mutated_at") || "";
+      if (localMut && remoteAt && remoteAt <= localMut) {
+        return { ok: true, changed: false, msg: "Seus dados locais est\xE3o \xE0 frente (edi\xE7\xE3o mais recente)." };
+      }
       if (c.lastSync && remoteAt && remoteAt <= c.lastSync) {
         return { ok: true, changed: false, msg: "Seus dados locais est\xE3o \xE0 frente." };
       }
@@ -7016,7 +7026,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
 
   // js/app.js
   storage_default.init();
-  window._onStorageChange = () => schedulePush();
+  window._onStorageChange = () => { try { localStorage.setItem("rpg_mutated_at", (/* @__PURE__ */ new Date()).toISOString()); } catch (e) {} schedulePush(); };
   var THEME_DEFAULTS = { primary: "#7C83FF", gold: "#FF7A6B", bg: "#F5F5FB" };
   function lightenHex(hex, amt = 40) {
     try {
@@ -7522,7 +7532,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
   }
 
-  var SECTIONS =["dashboard", "personagem", "agenda", "notas", "objetivos", "linha", "espiritual", "insights", "financas", "comercial", "treinos", "biblioteca", "compras", "recompensas"];
+  var SECTIONS =["dashboard", "personagem", "agenda", "notas", "objetivos", "linha", "insights", "financas", "comercial", "treinos", "biblioteca", "compras", "recompensas"];
   var RENDERERS = {
     personagem: renderPersonagem,
     agenda: renderAgenda,
