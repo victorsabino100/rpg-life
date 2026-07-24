@@ -25,6 +25,12 @@ for (const f of ["atlas.js", "manifest.json"]) {
 for (const f of fs.readdirSync(path.join(ROOT, "tema"))) {
   fs.copyFileSync(path.join(ROOT, "tema", f), path.join(OUT, "tema", f));
 }
+if (fs.existsSync(path.join(ROOT, "icons"))) {
+  fs.mkdirSync(path.join(OUT, "icons"), { recursive: true });
+  for (const f of fs.readdirSync(path.join(ROOT, "icons"))) {
+    fs.copyFileSync(path.join(ROOT, "icons", f), path.join(OUT, "icons", f));
+  }
+}
 
 const kb = Math.round(fs.statSync(path.join(OUT, "index.html")).size / 1024);
 console.log("preview/ gerado. index.html:", kb + "KB");
