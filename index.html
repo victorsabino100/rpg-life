@@ -1023,8 +1023,37 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     .checklist-due-btn, .checklist-del { opacity: 1 !important; }
   }
   </style>
+  <style id="auth-styles">
+    #auth-gate { position:fixed; inset:0; z-index:500; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg,#0E1220); }
+    .auth-card { width:100%; max-width:360px; background:var(--surface,#171B2B); border:1px solid var(--border,#2A3145); border-radius:18px; padding:34px 26px; box-shadow:0 20px 60px rgba(0,0,0,.35); text-align:center; }
+    .auth-logo { font-size:38px; line-height:1; }
+    .auth-brand { font-family:var(--font-display,'Sora',sans-serif); font-weight:800; font-size:26px; margin-top:6px; color:var(--text,#EAECF2); }
+    .auth-sub { color:var(--muted,#8A90A6); font-size:13px; margin-bottom:22px; }
+    #auth-title { font-size:18px; margin:0 0 16px; font-weight:700; color:var(--text,#EAECF2); }
+    .auth-card input { width:100%; padding:13px 14px; margin-bottom:11px; border:1px solid var(--border,#2A3145); border-radius:12px; background:var(--surface2,#0E1220); color:var(--text,#EAECF2); font-size:15px; outline:none; box-sizing:border-box; }
+    .auth-card input:focus { border-color:var(--primary,#7C83FF); }
+    #auth-submit { width:100%; padding:13px; border:none; border-radius:12px; background:var(--primary,#7C83FF); color:#fff; font-weight:700; font-size:15px; cursor:pointer; margin-top:4px; }
+    #auth-submit:disabled { opacity:.6; cursor:default; }
+    #auth-msg { font-size:12.5px; margin-top:12px; min-height:16px; line-height:1.45; }
+    .auth-switch { margin-top:18px; font-size:13px; color:var(--muted,#8A90A6); cursor:pointer; }
+    .auth-switch b { color:var(--primary,#7C83FF); }
+  </style>
 </head>
 <body>
+  <div id="auth-gate">
+    <div class="auth-card">
+      <div class="auth-logo">⚔️</div>
+      <div class="auth-brand">RPG Life</div>
+      <div class="auth-sub">Sua vida, gamificada.</div>
+      <h2 id="auth-title">Entrar</h2>
+      <input id="auth-email" type="email" placeholder="seu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter'){var p=document.getElementById('auth-pass');if(p)p.focus();}">
+      <input id="auth-pass" type="password" placeholder="senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')window._authSubmit&&window._authSubmit()">
+      <button id="auth-submit" onclick="window._authSubmit&&window._authSubmit()">Entrar</button>
+      <div id="auth-msg"></div>
+      <div id="auth-switch" class="auth-switch" onclick="window._authToggle&&window._authToggle()">Não tem conta? <b>Criar agora</b></div>
+    </div>
+  </div>
+  <script>try{if(JSON.parse(localStorage.getItem('rpg_auth')||'null')){var _g=document.getElementById('auth-gate');if(_g)_g.style.display='none';}}catch(e){}</script>
   <div id="app">
     <button id="mobile-menu-btn" onclick="window._toggleSidebar()" aria-label="Abrir menu">☰</button>
     <div id="sidebar-backdrop" onclick="window._closeSidebar()"></div>
@@ -6888,7 +6917,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   function syncEnabled() {
     const c = getSyncCfg();
-    return !!(c.url && c.key && c.code && c.auto !== false);
+    return !!(c.url && c.key && c.code && c.auto !== false && authSession());
   }
   function syncConfigured() {
     const c = getSyncCfg();
@@ -6898,7 +6927,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     return (u || "").trim().replace(/\/+$/, "");
   }
   function headers(c) {
-    return { "apikey": c.key, "Authorization": `Bearer ${c.key}`, "Content-Type": "application/json" };
+    var tok = (typeof authAccessToken === "function" && authAccessToken()) || c.key;
+    return { "apikey": c.key, "Authorization": `Bearer ${tok}`, "Content-Type": "application/json" };
   }
   function dataBlob() {
     const blob = {};
@@ -6948,7 +6978,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       return { ok: false, msg: "Falha de rede ao enviar." };
     }
   }
-  async function pull() {
+  async function pull(force) {
     const c = getSyncCfg();
     if (!syncConfigured()) return { ok: false, changed: false, msg: "Sincroniza\xE7\xE3o n\xE3o configurada." };
     const url = normUrl(c.url);
@@ -6960,13 +6990,16 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       if (!rows.length) return { ok: true, changed: false, msg: "Nenhum dado na nuvem ainda (este c\xF3digo \xE9 novo)." };
       const remote = rows[0].data || {};
       const remoteAt = rows[0].updated_at || "";
-      // Anti-reversão: nunca sobrescreve dados locais editados mais recentemente que a nuvem.
-      const localMut = localStorage.getItem("rpg_mutated_at") || "";
-      if (localMut && remoteAt && remoteAt <= localMut) {
-        return { ok: true, changed: false, msg: "Seus dados locais est\xE3o \xE0 frente (edi\xE7\xE3o mais recente)." };
-      }
-      if (c.lastSync && remoteAt && remoteAt <= c.lastSync) {
-        return { ok: true, changed: false, msg: "Seus dados locais est\xE3o \xE0 frente." };
+      // Anti-reversão: nunca sobrescreve dados locais editados mais recentemente que a nuvem
+      // (exceto num pull FORÇADO — ex.: logo após o login, que é autoritativo).
+      if (!force) {
+        const localMut = localStorage.getItem("rpg_mutated_at") || "";
+        if (localMut && remoteAt && remoteAt <= localMut) {
+          return { ok: true, changed: false, msg: "Seus dados locais est\xE3o \xE0 frente (edi\xE7\xE3o mais recente)." };
+        }
+        if (c.lastSync && remoteAt && remoteAt <= c.lastSync) {
+          return { ok: true, changed: false, msg: "Seus dados locais est\xE3o \xE0 frente." };
+        }
       }
       let changed = false;
       Object.entries(remote).forEach(([k, v]) => {
@@ -6997,6 +7030,96 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       push();
     }, 2500);
   }
+
+  // js/auth.js — login por e-mail/senha (Supabase Auth via REST) + sessão persistente
+  var AUTH_KEY = "rpg_auth";
+  function authCfg() { var c = getSyncCfg(); return { url: normUrl(c.url), key: c.key }; }
+  function authSession() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); } catch (e) { return null; } }
+  function authAccessToken() { var s = authSession(); return s && s.access_token ? s.access_token : ""; }
+  function authStore(j) {
+    if (!j || !j.access_token) return null;
+    var s = { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + ((j.expires_in || 3600) * 1e3), user: { id: j.user && j.user.id, email: j.user && j.user.email } };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(s));
+    return s;
+  }
+  async function authSignIn(email, password) {
+    var c = authCfg();
+    try {
+      var res = await fetch(c.url + "/auth/v1/token?grant_type=password", { method: "POST", headers: { apikey: c.key, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+      var j = await res.json();
+      if (res.ok && j.access_token) { authStore(j); return { ok: true }; }
+      var msg = j.error_description || j.msg || j.error || "N\xE3o foi poss\xEDvel entrar.";
+      if (/email not confirmed|confirm/i.test(msg)) msg = "Confirme seu e-mail antes de entrar (veja sua caixa de entrada).";
+      else if (/invalid login|invalid credentials/i.test(msg)) msg = "E-mail ou senha incorretos.";
+      return { ok: false, msg };
+    } catch (e) { return { ok: false, msg: "Falha de rede. Voc\xEA est\xE1 online?" }; }
+  }
+  async function authSignUp(email, password) {
+    var c = authCfg();
+    try {
+      var res = await fetch(c.url + "/auth/v1/signup", { method: "POST", headers: { apikey: c.key, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+      var j = await res.json();
+      if (res.ok && j.access_token) { authStore(j); return { ok: true, needsConfirm: false }; }
+      if (res.ok && (j.id || j.user)) return { ok: true, needsConfirm: true };
+      var msg = j.error_description || j.msg || j.error || "N\xE3o foi poss\xEDvel criar a conta.";
+      if (/already|exists|registered/i.test(msg)) msg = "Esse e-mail j\xE1 tem conta. Tente entrar.";
+      else if (/password/i.test(msg)) msg = "Senha muito curta (m\xEDnimo 6 caracteres).";
+      return { ok: false, msg };
+    } catch (e) { return { ok: false, msg: "Falha de rede. Voc\xEA est\xE1 online?" }; }
+  }
+  async function authRefresh() {
+    var s = authSession(); if (!s || !s.refresh_token) return false;
+    var c = authCfg();
+    try {
+      var res = await fetch(c.url + "/auth/v1/token?grant_type=refresh_token", { method: "POST", headers: { apikey: c.key, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: s.refresh_token }) });
+      var j = await res.json();
+      if (res.ok && j.access_token) { authStore(j); return true; }
+      return false;
+    } catch (e) { return false; }
+  }
+  function authSignOut() {
+    localStorage.removeItem(AUTH_KEY);
+    var cfg = getSyncCfg(); cfg.auto = false; setSyncCfg(cfg);
+    try { sessionStorage.removeItem("rpg_pulled"); } catch (e) {}
+  }
+  function _authEnterApp() { var g = document.getElementById("auth-gate"); if (g) g.style.display = "none"; }
+  function _authShowGate() { var g = document.getElementById("auth-gate"); if (g) { g.style.display = "flex"; _authRenderMode(); } }
+  window._authMode = "login";
+  function _authRenderMode() {
+    var isLogin = window._authMode === "login";
+    var t = document.getElementById("auth-title"); if (t) t.textContent = isLogin ? "Entrar" : "Criar conta";
+    var b = document.getElementById("auth-submit"); if (b) { b.textContent = isLogin ? "Entrar" : "Criar conta"; b.disabled = false; }
+    var sw = document.getElementById("auth-switch"); if (sw) sw.innerHTML = isLogin ? "N\xE3o tem conta? <b>Criar agora</b>" : "J\xE1 tem conta? <b>Entrar</b>";
+    var p = document.getElementById("auth-pass"); if (p) p.setAttribute("autocomplete", isLogin ? "current-password" : "new-password");
+  }
+  window._authToggle = function () { window._authMode = window._authMode === "login" ? "signup" : "login"; var m = document.getElementById("auth-msg"); if (m) m.textContent = ""; _authRenderMode(); };
+  window._authSubmit = async function () {
+    var email = (document.getElementById("auth-email").value || "").trim();
+    var pass = document.getElementById("auth-pass").value || "";
+    var msg = document.getElementById("auth-msg");
+    var btn = document.getElementById("auth-submit");
+    var set = function (t, ok) { if (msg) { msg.style.color = ok ? "var(--green,#1E9E73)" : "var(--red,#DB5648)"; msg.innerHTML = t; } };
+    if (!email || !pass) { set("Preencha e-mail e senha.", false); return; }
+    if (btn) { btn.disabled = true; btn.textContent = "…"; }
+    var r = window._authMode === "signup" ? await authSignUp(email, pass) : await authSignIn(email, pass);
+    if (btn) btn.disabled = false;
+    _authRenderMode();
+    if (r.ok && r.needsConfirm) { set("Conta criada! Enviamos um <b>link de confirma\xE7\xE3o</b> pro seu e-mail. Confirme e depois entre.", true); window._authMode = "login"; _authRenderMode(); return; }
+    if (r.ok) {
+      var s = authSession();
+      var cfg = getSyncCfg(); cfg.code = s.user.id; cfg.auto = true; setSyncCfg(cfg);
+      set("Entrando…", true);
+      try { sessionStorage.setItem("rpg_pulled", "1"); } catch (e) {}
+      pull(true).then(function (pr) { if (pr && pr.changed) location.reload(); else { push(); _authEnterApp(); } }).catch(function () { _authEnterApp(); });
+      return;
+    }
+    set(r.msg || "Erro.", false);
+  };
+  window._authSignOutBtn = function () {
+    if (!confirm("Sair da conta neste aparelho? Seus dados locais continuam salvos aqui.")) return;
+    authSignOut();
+    location.reload();
+  };
 
   // js/app.js
   storage_default.init();
@@ -7573,8 +7696,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     </div>
     <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="window._saveSettings()">Salvar</button>
     <hr style="border-color:var(--border);margin:16px 0">
-    <div class="card-title" style="margin-bottom:4px">\u2601\uFE0F Sincronizar entre aparelhos</div>
-    <small style="color:var(--muted);font-size:11px;display:block;margin-bottom:10px">Use o MESMO c\xF3digo no PC e no celular pra compartilhar seus dados. Sem login.</small>
+    <div class="card-title" style="margin-bottom:4px">\u2601\uFE0F Conta & Sincroniza\xE7\xE3o</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:13px;min-width:0"><div style="color:var(--muted);font-size:11px">Logado como</div><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(authSession() && authSession().user && authSession().user.email) || "\u2014"}</div></div>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);flex:none" onclick="window._authSignOutBtn()">Sair</button>
+    </div>
+    <small style="color:var(--muted);font-size:11px;display:block;margin-bottom:10px">Seus dados sincronizam automaticamente com sua conta em todos os aparelhos onde voc\xEA logar. O c\xF3digo abaixo \xE9 o ID da sua conta \u2014 n\xE3o precisa mexer.</small>
     <div class="form-group"><label>URL do Supabase</label><input id="sync-url" value="${sync.url || ""}" placeholder="https://xxxx.supabase.co"></div>
     <div class="form-group"><label>Chave p\xFAblica (anon)</label><input id="sync-key" value="${sync.key || ""}" placeholder="eyJ..."></div>
     <div class="form-group"><label>\u{1F511} C\xF3digo de sincroniza\xE7\xE3o</label><input id="sync-code" value="${sync.code || ""}" placeholder="invente um c\xF3digo secreto, ex: victor-2026"></div>
@@ -8088,12 +8215,21 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   };
   renderCharMini();
   navigate("dashboard");
-  if (syncEnabled() && !sessionStorage.getItem("rpg_pulled")) {
-    sessionStorage.setItem("rpg_pulled", "1");
-    pull().then((r) => {
-      if (r && r.changed) location.reload();
-    });
-  }
+  (function bootAuth() {
+    var sess = authSession();
+    if (sess && sess.user && sess.user.id) {
+      var cfg = getSyncCfg(); cfg.code = sess.user.id; cfg.auto = true; setSyncCfg(cfg);
+      _authEnterApp();
+      authRefresh().finally(function () {
+        if (syncEnabled() && !sessionStorage.getItem("rpg_pulled")) {
+          sessionStorage.setItem("rpg_pulled", "1");
+          pull().then(function (r) { if (r && r.changed) location.reload(); });
+        }
+      });
+    } else {
+      _authShowGate();
+    }
+  })();
   function showLevelUp2(char) {
     const tier = getTier(char.level);
     document.getElementById("levelup-avatar").innerHTML = getAvatarSVG(char.level, 80);
