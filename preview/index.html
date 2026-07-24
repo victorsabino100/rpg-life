@@ -7726,19 +7726,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <div style="font-size:13px;min-width:0"><div style="color:var(--muted);font-size:11px">Logado como</div><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(authSession() && authSession().user && authSession().user.email) || "\u2014"}</div></div>
       <button class="btn btn-ghost btn-sm" style="color:var(--red);flex:none" onclick="window._authSignOutBtn()">Sair</button>
     </div>
-    <small style="color:var(--muted);font-size:11px;display:block;margin-bottom:10px">Seus dados sincronizam automaticamente com sua conta em todos os aparelhos onde voc\xEA logar. O c\xF3digo abaixo \xE9 o ID da sua conta \u2014 n\xE3o precisa mexer.</small>
-    <div class="form-group"><label>URL do Supabase</label><input id="sync-url" value="${sync.url || ""}" placeholder="https://xxxx.supabase.co"></div>
-    <div class="form-group"><label>Chave p\xFAblica (anon)</label><input id="sync-key" value="${sync.key || ""}" placeholder="eyJ..."></div>
-    <div class="form-group"><label>\u{1F511} C\xF3digo de sincroniza\xE7\xE3o</label><input id="sync-code" value="${sync.code || ""}" placeholder="invente um c\xF3digo secreto, ex: victor-2026"></div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer">
-      <input type="checkbox" id="sync-auto" style="width:16px;height:16px;flex:0 0 auto;margin:0;cursor:pointer" ${sync.auto !== false ? "checked" : ""}> <span>Sincronizar automaticamente</span>
-    </label>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" onclick="window._syncTest()">\u{1F50C} Testar conex\xE3o</button>
-      <button class="btn btn-ghost btn-sm" onclick="window._syncSave()">\u{1F4BE} Salvar config</button>
-      <button class="btn btn-primary btn-sm" onclick="window._syncNow()">\u{1F504} Sincronizar agora</button>
-    </div>
-    <div id="sync-status" style="font-size:12px;color:var(--muted);margin-top:8px">${sync.lastSync ? "\xDAltima sync: " + new Date(sync.lastSync).toLocaleString("pt-BR") : "Ainda n\xE3o sincronizado."}</div>
+    <small style="color:var(--muted);font-size:11px;display:block">Seus dados sincronizam automaticamente com sua conta em todos os aparelhos onde voc\xEA logar. ${sync.lastSync ? "\xDAltima sincroniza\xE7\xE3o: " + new Date(sync.lastSync).toLocaleString("pt-BR") + "." : ""}</small>
     <hr style="border-color:var(--border);margin:16px 0">
     <div class="card-title" style="margin-bottom:8px;color:var(--red)">\u26A0\uFE0F Zona de Risco</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -7775,34 +7763,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
     window._gcalDisconnectFromSettings = () => { gcalDisconnect(); window._setGcalStatus(); renderGcalCard(); };
     window._setGcalStatus();
-    const syncMsg = (m, ok) => {
-      const el = document.getElementById("sync-status");
-      if (el) {
-        el.textContent = m;
-        el.style.color = ok ? "var(--green)" : "var(--red)";
-      }
-    };
-    const readSyncForm = () => ({ url: document.getElementById("sync-url").value.trim(), key: document.getElementById("sync-key").value.trim(), code: document.getElementById("sync-code").value.trim(), auto: document.getElementById("sync-auto").checked, lastSync: getSyncCfg().lastSync });
-    window._syncSave = () => {
-      setSyncCfg(readSyncForm());
-      syncMsg("Config salva \u2705", true);
-    };
-    window._syncTest = async () => {
-      syncMsg("Testando...", true);
-      const r = await testConnection(readSyncForm());
-      syncMsg(r.msg, r.ok);
-    };
-    window._syncNow = async () => {
-      setSyncCfg(readSyncForm());
-      if (!syncConfigured()) {
-        syncMsg("Preencha URL, chave e c\xF3digo.", false);
-        return;
-      }
-      syncMsg("Sincronizando...", true);
-      const r = await syncNow();
-      syncMsg(r.msg, r.ok);
-      if (r.ok && r.changed) setTimeout(() => location.reload(), 800);
-    };
     window._saveSettings = () => {
       const name = document.getElementById("set-name").value.trim();
       if (name) storage_default.update("character", (c) => {
