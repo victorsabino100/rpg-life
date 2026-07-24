@@ -7,9 +7,8 @@
   <!-- PWA / instalável como app -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0A0F1C">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=7">
-  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png?v=7">
-  <link rel="apple-touch-icon" href="icons/icon-180.png?v=7">
+  <link rel="icon" type="image/png" href="icons/logo-circle.png?v=8">
+  <link rel="apple-touch-icon" href="icons/icon-180.png?v=8">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1026,7 +1025,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   <style id="auth-styles">
     #auth-gate { position:fixed; inset:0; z-index:500; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg,#0E1220); }
     .auth-card { width:100%; max-width:360px; background:var(--surface,#171B2B); border:1px solid var(--border,#2A3145); border-radius:18px; padding:34px 26px; box-shadow:0 20px 60px rgba(0,0,0,.35); text-align:center; }
-    .auth-logo { font-size:38px; line-height:1; }
+    .auth-logo { width:84px; height:84px; display:block; margin:0 auto; }
     .auth-brand { font-family:var(--font-display,'Sora',sans-serif); font-weight:800; font-size:26px; margin-top:6px; color:var(--text,#EAECF2); }
     .auth-sub { color:var(--muted,#8A90A6); font-size:13px; margin-bottom:22px; }
     #auth-title { font-size:18px; margin:0 0 16px; font-weight:700; color:var(--text,#EAECF2); }
@@ -1042,7 +1041,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
 <body>
   <div id="auth-gate">
     <div class="auth-card">
-      <div class="auth-logo">⚔️</div>
+      <img class="auth-logo" src="icons/logo-circle.png?v=8" alt="RPG Life" width="84" height="84">
       <div class="auth-brand">RPG Life</div>
       <div class="auth-sub">Sua vida, gamificada.</div>
       <h2 id="auth-title">Entrar</h2>
