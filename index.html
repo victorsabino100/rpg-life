@@ -6939,10 +6939,16 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   function normUrl(u) {
     return (u || "").trim().replace(/\/+$/, "");
   }
+  // Usa a chave publicável nas chamadas de dados. O access_token do usuário expira em 1h
+  // e derrubava o sync silenciosamente (401); a identidade continua vindo do login (code = user.id).
   function headers(c) {
-    var tok = (typeof authAccessToken === "function" && authAccessToken()) || c.key;
-    return { "apikey": c.key, "Authorization": `Bearer ${tok}`, "Content-Type": "application/json" };
+    return { "apikey": c.key, "Authorization": `Bearer ${c.key}`, "Content-Type": "application/json" };
   }
+  // Registra o resultado da última sincronização pra falha nunca mais passar despercebida.
+  function setSyncErr(msg) {
+    try { if (msg) localStorage.setItem("rpg_sync_err", msg); else localStorage.removeItem("rpg_sync_err"); } catch (e) {}
+  }
+  function getSyncErr() { try { return localStorage.getItem("rpg_sync_err") || ""; } catch (e) { return ""; } }
   function dataBlob() {
     const blob = {};
     DATA_KEYS.forEach((k) => {
@@ -6964,12 +6970,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         headers: { ...headers(c), "Prefer": "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(body)
       });
-      if (!res.ok) return { ok: false, msg: `Erro ao enviar (${res.status})` };
+      if (!res.ok) { const m = `Erro ao enviar (${res.status})`; setSyncErr(m); return { ok: false, msg: m }; }
+      setSyncErr("");
       const cfg2 = getSyncCfg();
       cfg2.lastSync = stamp;
       setSyncCfg(cfg2);
       return { ok: true, msg: "Enviado pra nuvem \u2B06\uFE0F" };
     } catch (e) {
+      setSyncErr("Falha de rede ao enviar.");
       return { ok: false, msg: "Falha de rede ao enviar." };
     }
   }
@@ -6979,7 +6987,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const url = normUrl(c.url);
     try {
       const res = await fetch(`${url}/rest/v1/vaults?code=eq.${encodeURIComponent(c.code)}&select=data,updated_at`, { headers: headers(c) });
-      if (!res.ok) return { ok: false, changed: false, msg: `Erro ao baixar (${res.status})` };
+      if (!res.ok) { const m = `Erro ao baixar (${res.status})`; setSyncErr(m); return { ok: false, changed: false, msg: m }; }
       const rows = await res.json();
       if (!Array.isArray(rows)) return { ok: false, changed: false, msg: "Resposta inesperada do servidor." };
       if (!rows.length) return { ok: true, changed: false, msg: "Nenhum dado na nuvem ainda (este c\xF3digo \xE9 novo)." };
@@ -7691,6 +7699,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <button class="btn btn-ghost btn-sm" style="color:var(--red);flex:none" onclick="window._authSignOutBtn()">Sair</button>
     </div>
     <small style="color:var(--muted);font-size:11px;display:block">Seus dados sincronizam automaticamente com sua conta em todos os aparelhos onde voc\xEA logar. ${sync.lastSync ? "\xDAltima sincroniza\xE7\xE3o: " + new Date(sync.lastSync).toLocaleString("pt-BR") + "." : ""}</small>
+    ${getSyncErr() ? `<div style="margin-top:8px;background:rgba(219,86,72,.1);border:1px solid var(--red);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--red)">⚠️ Sincroniza\xE7\xE3o com problema: ${esc(getSyncErr())}</div>` : ""}
     <hr style="border-color:var(--border);margin:16px 0">
     <div class="card-title" style="margin-bottom:8px;color:var(--red)">\u26A0\uFE0F Zona de Risco</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
