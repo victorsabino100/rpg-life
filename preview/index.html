@@ -7146,6 +7146,39 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     location.reload();
   };
 
+  // js/realtime.js — mantém a tela em dia sem recarregar: espia a nuvem e, se houver
+  // algo mais novo de outro aparelho, baixa e re-renderiza a seção atual.
+  async function _syncPeek() {
+    if (!syncEnabled()) return;
+    const c = getSyncCfg();
+    const url = normUrl(c.url);
+    try {
+      const res = await fetch(`${url}/rest/v1/vaults?code=eq.${encodeURIComponent(c.code)}&select=updated_at`, { headers: headers(c) });
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!Array.isArray(rows) || !rows.length) return;
+      const remoteAt = rows[0].updated_at || "";
+      const localMut = localStorage.getItem("rpg_mutated_at") || "";
+      const lastSync = c.lastSync || "";
+      // só baixa se a nuvem é mais nova que a última sync E que a última edição local
+      if (remoteAt && remoteAt > lastSync && (!localMut || remoteAt > localMut)) {
+        const r = await pull();
+        if (r && r.changed) {
+          try { renderCharMini(); } catch (e) {}
+          try { navigate(currentSection); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }
+  function _syncPollTick() {
+    if (!syncEnabled() || document.hidden) return;
+    const mo = document.getElementById("modal-overlay");
+    if (mo && !mo.classList.contains("hidden")) return;              // não interrompe um modal aberto
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)) return; // nem edição em andamento
+    _syncPeek();
+  }
+
   // js/app.js
   storage_default.init();
   window._onStorageChange = () => { try { localStorage.setItem("rpg_mutated_at", (/* @__PURE__ */ new Date()).toISOString()); } catch (e) {} schedulePush(); };
@@ -8215,6 +8248,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       _authShowGate();
     }
   })();
+  // Atualização automática (quase em tempo real): a cada 20s enquanto o app está visível,
+  // ao voltar o foco e ao reabrir a aba/app.
+  setInterval(_syncPollTick, 2e4);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) _syncPollTick(); });
+  window.addEventListener("focus", _syncPollTick);
   function showLevelUp2(char) {
     const tier = getTier(char.level);
     document.getElementById("levelup-avatar").innerHTML = getAvatarSVG(char.level, 80);
