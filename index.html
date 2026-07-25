@@ -1073,7 +1073,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <li data-section="recompensas">  <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5h9v4a4.5 4.5 0 0 1-9 0z"/><path d="M7.5 6H5.4a1.9 1.9 0 0 0 0 3.8h2.4"/><path d="M16.5 6h2.1a1.9 1.9 0 0 1 0 3.8h-2.4"/><line x1="12" y1="12.9" x2="12" y2="16.5"/><path d="M8.8 20h6.4l-.9-3.5H9.7z"/></svg></span> Recompensas</li>
       </ul>
       <div class="sidebar-footer">
-        <button id="btn-sync" onclick="window._sidebarSync()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 4v4h-4"/></svg>Atualizar</button>
         <button id="btn-settings" onclick="openSettings()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.2a2 2 0 0 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H2a2 2 0 0 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H8a1.6 1.6 0 0 0 1-1.5V2a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V8a1.6 1.6 0 0 0 1.5 1h.2a2 2 0 0 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Config</button>
       </div>
     </nav>
@@ -6937,24 +6936,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     });
     return blob;
   }
-  async function testConnection(cfg) {
-    const c = cfg || getSyncCfg();
-    const url = normUrl(c.url);
-    if (!url || !c.key) return { ok: false, msg: "Preencha a URL e a chave." };
-    if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)) return { ok: false, msg: "URL inv\xE1lida. Use o formato https://xxxx.supabase.co" };
-    try {
-      const res = await fetch(`${url}/rest/v1/vaults?select=code&limit=1`, { headers: headers(c) });
-      const ct = res.headers.get("content-type") || "";
-      if (res.ok && ct.includes("application/json")) return { ok: true, msg: "Conex\xE3o OK! \u2705" };
-      if (res.ok) return { ok: false, msg: "Resposta n\xE3o \xE9 do Supabase. Confira a URL." };
-      const txt = await res.text();
-      if (res.status === 404) return { ok: false, msg: 'Tabela "vaults" n\xE3o encontrada. Rode o SQL de configura\xE7\xE3o no Supabase.' };
-      if (res.status === 401 || res.status === 403) return { ok: false, msg: 'Chave inv\xE1lida ou sem permiss\xE3o. Confira a chave "anon public".' };
-      return { ok: false, msg: `Erro ${res.status}: ${txt.slice(0, 120)}` };
-    } catch (e) {
-      return { ok: false, msg: "Falha de rede: " + (e.message || e) + " (confira a URL)" };
-    }
-  }
   async function push() {
     const c = getSyncCfg();
     if (!syncConfigured()) return { ok: false, msg: "Sincroniza\xE7\xE3o n\xE3o configurada." };
@@ -7014,12 +6995,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     } catch (e) {
       return { ok: false, changed: false, msg: "Falha de rede ao baixar." };
     }
-  }
-  async function syncNow() {
-    const p = await pull();
-    if (!p.ok) return p;
-    const u = await push();
-    return { ok: u.ok, changed: p.changed, msg: u.ok ? "Sincronizado \u2705" : u.msg };
   }
   var _t;
   function schedulePush() {
@@ -7175,39 +7150,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   window._applyTheme = applyTheme;
   applyTheme();
-  window._sidebarSync = async () => {
-    const btn = document.getElementById("btn-sync");
-    const t = document.getElementById("xp-toast");
-    const toast = (m) => {
-      if (t) {
-        t.textContent = m;
-        t.classList.remove("hidden");
-        clearTimeout(t._timer);
-        t._timer = setTimeout(() => t.classList.add("hidden"), 2e3);
-      }
-    };
-    if (!syncConfigured()) {
-      toast("\u2699\uFE0F Configure a sincroniza\xE7\xE3o primeiro");
-      openSettings();
-      return;
-    }
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "\u{1F504} Atualizando...";
-    }
-    const r = await syncNow();
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "\u{1F504} Atualizar";
-    }
-    toast(r.ok ? "\u2705 Atualizado!" : "\u26A0\uFE0F " + r.msg);
-    if (r.ok && r.changed) {
-      sessionStorage.setItem("rpg_pulled", "1");
-      location.reload();
-      return;
-    }
-    navigate(currentSection);
-  };
   window._modalContent = (html) => {
     document.getElementById("modal-content").innerHTML = html;
     document.getElementById("modal-overlay").classList.remove("hidden");
