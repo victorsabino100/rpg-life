@@ -6616,6 +6616,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
 
   // js/sync.js
+  var APP_VERSION = "v66";
   var CFG_KEY = "rpg_sync_cfg";
   var DEFAULT_CFG = {
     url: "https://esuvnbgxoktjjutmwwhs.supabase.co",
@@ -6653,6 +6654,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     try { if (msg) localStorage.setItem("rpg_sync_err", msg); else localStorage.removeItem("rpg_sync_err"); } catch (e) {}
   }
   function getSyncErr() { try { return localStorage.getItem("rpg_sync_err") || ""; } catch (e) { return ""; } }
+  // Diagnóstico: guarda a última TENTATIVA (não só o sucesso), pra distinguir
+  // "nunca tentou" de "tentou e falhou".
+  function setSyncTry(kind, ok, detail) {
+    try { localStorage.setItem("rpg_sync_try", JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), kind, ok: !!ok, detail: detail || "" })); } catch (e) {}
+  }
+  function getSyncTry() { try { return JSON.parse(localStorage.getItem("rpg_sync_try") || "null"); } catch (e) { return null; } }
   function dataBlob() {
     const blob = {};
     DATA_KEYS.forEach((k) => {
@@ -6674,14 +6681,17 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         headers: { ...headers(c), "Prefer": "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(body)
       });
-      if (!res.ok) { const m = `Erro ao enviar (${res.status})`; setSyncErr(m); return { ok: false, msg: m }; }
+      if (!res.ok) { const m = `Erro ao enviar (${res.status})`; setSyncErr(m); setSyncTry("envio", false, m); return { ok: false, msg: m }; }
       setSyncErr("");
+      setSyncTry("envio", true, "");
       const cfg2 = getSyncCfg();
-      cfg2.lastSync = stamp;
+      cfg2.lastSync = stamp;                                    // usado pra comparar quem \u00E9 mais novo
+      cfg2.lastSyncAt = (/* @__PURE__ */ new Date()).toISOString(); // hor\u00E1rio REAL do envio (exibi\u00E7\u00E3o)
       setSyncCfg(cfg2);
       return { ok: true, msg: "Enviado pra nuvem \u2B06\uFE0F" };
     } catch (e) {
       setSyncErr("Falha de rede ao enviar.");
+      setSyncTry("envio", false, "rede");
       return { ok: false, msg: "Falha de rede ao enviar." };
     }
   }
@@ -6717,7 +6727,10 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       });
       const cfg2 = getSyncCfg();
       cfg2.lastSync = remoteAt || (/* @__PURE__ */ new Date()).toISOString();
+      cfg2.lastSyncAt = (/* @__PURE__ */ new Date()).toISOString();
       setSyncCfg(cfg2);
+      setSyncErr("");
+      setSyncTry("download", true, changed ? "atualizou" : "sem novidade");
       return { ok: true, changed, msg: changed ? "Dados atualizados da nuvem \u2B07\uFE0F" : "J\xE1 estava atualizado." };
     } catch (e) {
       return { ok: false, changed: false, msg: "Falha de rede ao baixar." };
@@ -6815,6 +6828,27 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       return;
     }
     set(r.msg || "Erro.", false);
+  };
+  // Painel de diagnóstico do sync — mostra o estado REAL, pra falha nunca mais ser invisível.
+  function _syncDiagHTML() {
+    var c = getSyncCfg(), s = authSession(), t = getSyncTry(), err = getSyncErr();
+    var fmtT = function (iso) { try { return new Date(iso).toLocaleString("pt-BR"); } catch (e) { return "—"; } };
+    var row = function (k, v, color) { return `<div style="display:flex;justify-content:space-between;gap:10px"><span style="color:var(--muted)">${k}</span><b style="text-align:right;${color ? "color:" + color : ""}">${v}</b></div>`; };
+    var out = "";
+    out += row("Vers\xE3o do app", APP_VERSION);
+    out += row("Conta", s && s.user ? "conectada" : "sem sess\xE3o", s && s.user ? "var(--green)" : "var(--red)");
+    out += row("Envio autom\xE1tico", syncEnabled() ? "ligado" : "desligado", syncEnabled() ? "var(--green)" : "var(--red)");
+    out += row("\xDAltima sincroniza\xE7\xE3o", c.lastSyncAt ? fmtT(c.lastSyncAt) : (c.lastSync ? fmtT(c.lastSync) + " (antiga)" : "nunca"), c.lastSyncAt ? "" : "var(--red)");
+    if (t) out += row("\xDAltima tentativa", fmtT(t.at) + " \xB7 " + t.kind + " \xB7 " + (t.ok ? "ok" : "falhou"), t.ok ? "var(--green)" : "var(--red)");
+    else out += row("\xDAltima tentativa", "nenhuma", "var(--red)");
+    if (err) out += `<div style="margin-top:6px;color:var(--red)">⚠️ ${esc(err)}</div>`;
+    return out;
+  }
+  window._syncTestNow = async function () {
+    var box = document.getElementById("sync-diag");
+    if (box) box.innerHTML = "<div style='color:var(--muted)'>Testando…</div>";
+    var r = await push();
+    if (box) box.innerHTML = _syncDiagHTML() + `<div style="margin-top:6px;color:${r.ok ? "var(--green)" : "var(--red)"}">${r.ok ? "✅ Enviado com sucesso." : "❌ " + esc(r.msg || "falhou")}</div>`;
   };
   window._authSignOutBtn = function () {
     if (!confirm("Sair da conta neste aparelho? Seus dados locais continuam salvos aqui.")) return;
@@ -7401,8 +7435,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <div style="font-size:13px;min-width:0"><div style="color:var(--muted);font-size:11px">Logado como</div><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(authSession() && authSession().user && authSession().user.email) || "\u2014"}</div></div>
       <button class="btn btn-ghost btn-sm" style="color:var(--red);flex:none" onclick="window._authSignOutBtn()">Sair</button>
     </div>
-    <small style="color:var(--muted);font-size:11px;display:block">Seus dados sincronizam automaticamente com sua conta em todos os aparelhos onde voc\xEA logar. ${sync.lastSync ? "\xDAltima sincroniza\xE7\xE3o: " + new Date(sync.lastSync).toLocaleString("pt-BR") + "." : ""}</small>
-    ${getSyncErr() ? `<div style="margin-top:8px;background:rgba(219,86,72,.1);border:1px solid var(--red);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--red)">⚠️ Sincroniza\xE7\xE3o com problema: ${esc(getSyncErr())}</div>` : ""}
+    <small style="color:var(--muted);font-size:11px;display:block">Seus dados sincronizam automaticamente com sua conta em todos os aparelhos onde voc\xEA logar.</small>
+    <div id="sync-diag" style="margin-top:9px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 11px;font-size:11.5px;line-height:1.7">${_syncDiagHTML()}</div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="window._syncTestNow()">\u{1F504} Testar sincroniza\xE7\xE3o agora</button>
     <hr style="border-color:var(--border);margin:16px 0">
     <div class="card-title" style="margin-bottom:8px;color:var(--red)">\u26A0\uFE0F Zona de Risco</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -7882,7 +7917,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       authRefresh().finally(function () {
         if (syncEnabled() && !sessionStorage.getItem("rpg_pulled")) {
           sessionStorage.setItem("rpg_pulled", "1");
-          pull().then(function (r) { if (r && r.changed) location.reload(); });
+          // baixa o que houver e, em seguida, SEMPRE envia o estado local
+          // (antes o boot só baixava: quem abria sem editar nada nunca subia nada)
+          pull().then(function (r) { if (r && r.changed) location.reload(); else push(); });
         }
       });
     } else {
