@@ -5132,7 +5132,22 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           if (cat === "debt") {
             const totalDebt = r.installTotal ? Math.round(r.amount * r.installTotal * 100) / 100 : r.amount;
             const paid = r.installNo ? Math.round(r.amount * Math.max(0, r.installNo - 1) * 100) / 100 : 0;
-            f.debts.push({ id: base, name: r.installTotal ? `${desc} (${r.installTotal}x)` : desc, total: totalDebt, paid, creditor: cardNm, dueDate: date, cardId: _stmtCardId });
+            const cleanName = r.installTotal ? desc.replace(/\s*\d{1,2}\s*\/\s*\d{1,2}\s*/, " ").replace(/\s{2,}/g, " ").trim() || desc : desc;
+            f.debts.push({ id: base, name: r.installTotal ? `${cleanName} (${r.installTotal}x)` : desc, total: totalDebt, paid, creditor: cardNm, dueDate: r.installTotal ? addMonths(date, r.installTotal - (r.installNo || 1)) : date, cardId: _stmtCardId, fromInstallment: r.installTotal ? base : void 0 });
+            // Parcelado: lança a parcela DESTE mês e todas as futuras como despesas mensais.
+            // (as anteriores já foram pagas em faturas passadas — não são lançadas)
+            if (r.installTotal && r.installTotal > 1) {
+              const from = r.installNo || 1;
+              for (let n = from; n <= r.installTotal; n++) {
+                f.variableExpenses.push({
+                  id: `${base}-p${n}`, groupId: base,
+                  name: `${cleanName} (${n}/${r.installTotal})`,
+                  amount: r.amount, date: addMonths(date, n - from),
+                  category: "Parcelamento", paymentMethod: "Cr\xE9dito", cardId: _stmtCardId,
+                  installments: r.installTotal, installmentNo: n
+                });
+              }
+            }
           } else if (cat === "fixed") {
             f.fixedExpenses.push({ id: base, name: desc, amount: r.amount, date, category: "Assinaturas", paymentMethod: "Cr\xE9dito", cardId: _stmtCardId, status: "topay", recurring: true });
           } else {
