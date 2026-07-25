@@ -13,9 +13,8 @@ function fixEl(el){
   var m=st.match(/linear-gradient\(180deg,\s*(#[0-9a-fA-F]{6})38/);
   if(m){var c=hardColor(m[1]);
     el.style.background=c;el.style.borderBottomColor=c;el.style.borderRadius='0';
-    var ts=el.querySelectorAll('.crm-col-title,.journey-col-headtitle');
+    var ts=el.querySelectorAll('.journey-col-headtitle');
     for(var i=0;i<ts.length;i++)ts[i].style.color='#fff';
-    var tot=el.querySelector('.crm-col-total');if(tot)tot.style.color='rgba(255,255,255,.8)';
     var sp=el.querySelectorAll('span');
     for(var j=0;j<sp.length;j++){var s2=sp[j].getAttribute('style')||'';
       if(/background:\s*#[0-9a-fA-F]{6}22/.test(s2)){sp[j].style.background='#fff';sp[j].style.color='#17150F';sp[j].style.borderRadius='0'}}

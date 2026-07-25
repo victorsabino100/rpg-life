@@ -566,6 +566,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 .flow-wrap { position:relative; overflow:auto; height:calc(100dvh - 320px); min-height:380px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r); -webkit-overflow-scrolling:touch; }
 .flow-board { position:relative; width:1600px; height:1200px; background-image:radial-gradient(circle, var(--border) 1px, transparent 1px); background-size:28px 28px; }
 .flow-board svg { position:absolute; inset:0; width:100%; height:100%; }
+.fl-add-card { width:100%; margin-top:8px; background:none; border:1px dashed var(--border); color:var(--muted); border-radius:var(--r-sm); padding:7px; cursor:pointer; font-size:12px; transition:all .15s ease; }
+.fl-add-card:hover { border-color:var(--primary); color:var(--primary); }
 .flow-node { position:absolute; max-width:210px; min-width:54px; padding:9px 15px; background:var(--primary); border:1px solid rgba(0,0,0,.16); border-radius:10px; font-size:14.5px; font-weight:600; color:#fff; text-align:center; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; transform:translate(-50%,-50%); word-break:break-word; overflow-wrap:anywhere; line-height:1.35; white-space:pre-wrap; box-shadow:0 2px 8px rgba(0,0,0,.16); }
 .flow-node.root { font-family:var(--font-display); font-size:18px; font-weight:800; max-width:280px; min-width:150px; padding:11px 19px; }
 .flow-node.sel { box-shadow:0 0 0 3px rgba(124,131,255,.55), 0 2px 8px rgba(0,0,0,.16); }
@@ -713,29 +715,7 @@ html[data-theme="dark"] .lib-tab.active { background:var(--primary); border-colo
 #undo-btn { background:var(--primary); color:#fff; border:none; border-radius:var(--r-sm); padding:7px 15px; cursor:pointer; font-weight:700; font-size:13px; transition:filter .15s ease; }
 #undo-btn:hover { filter:brightness(1.1); }
 
-/* ================= CRM / COMERCIAL ================= */
-.crm-board { display:flex; gap:15px; overflow-x:auto; padding-bottom:14px; align-items:flex-start; }
-.crm-col { flex:0 0 254px; background:var(--surface2); border-radius:var(--r-lg); padding:11px; min-height:120px; transition:background .15s ease; }
-.crm-col.drag-over { background:var(--border); outline:2px dashed var(--primary); }
-.crm-col-head { padding:7px 6px 11px; }
-.crm-col-title { font-family:var(--font-display); font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; }
-.crm-col-count { font-family:var(--font-mono); font-size:11px; padding:1px 8px; border-radius:100px; font-weight:700; }
-.crm-col-total { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:3px; }
-.crm-col-body { display:flex; flex-direction:column; gap:8px; min-height:30px; }
-.crm-card { background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:11px; cursor:grab; position:relative; transition:border-color .16s ease, transform .1s ease, box-shadow .16s ease; box-shadow:var(--shadow-sm); }
-.crm-card:hover { border-color:var(--primary); box-shadow:var(--shadow-md); }
-.crm-card:active { cursor:grabbing; transform:scale(.98); }
-.crm-card-name { font-weight:600; font-size:13px; padding-right:16px; }
-.crm-card-contact { font-size:11px; color:var(--muted); margin-top:3px; }
-.crm-card-foot { display:flex; justify-content:space-between; align-items:center; margin-top:8px; gap:6px; }
-.crm-card-value { font-family:var(--font-mono); font-size:12px; font-weight:700; color:var(--green); }
-.crm-card-origin { font-size:10px; color:var(--muted); background:var(--surface2); padding:2px 7px; border-radius:100px; }
-.crm-card-del { position:absolute; top:7px; right:7px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:11px; opacity:0; transition:opacity .15s ease; }
-.crm-card:hover .crm-card-del { opacity:1; }
-.crm-card-del:hover { color:var(--red); }
-.crm-empty { font-size:11px; color:var(--muted); text-align:center; padding:14px 0; opacity:.6; }
-.crm-add-card { width:100%; margin-top:8px; background:none; border:1px dashed var(--border); color:var(--muted); border-radius:var(--r-sm); padding:7px; cursor:pointer; font-size:12px; transition:all .15s ease; }
-.crm-add-card:hover { border-color:var(--primary); color:var(--primary); }
+/* ================= FUNIL ================= */
 .funnel-row { margin-bottom:9px; }
 .funnel-bar { height:28px; border-radius:8px; margin:0 auto; transition:width .5s cubic-bezier(.22,1,.36,1); min-width:40px; }
 .funnel-label { display:flex; justify-content:space-between; font-size:12px; margin-top:3px; }
@@ -958,7 +938,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
 .radar-cap { font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
 .radar-svg { width:100%; height:auto; display:block; overflow:visible; }
 .radar-poly { transition:all .7s cubic-bezier(.22,1,.36,1); }
-.card, .rv-card, .tl-card, .fin-stat-card, .book-card, .crm-card, .reward-card { border-radius:var(--r-lg) !important; }
+.card, .rv-card, .tl-card, .fin-stat-card, .book-card, .reward-card { border-radius:var(--r-lg) !important; }
 @media (max-width:900px){ .msala-radar { width:100%; } }
 /* ============ AURORA — modais ============ */
 #modal-box { border-radius: var(--r-lg) !important; }
@@ -996,14 +976,14 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     .section-header > div { width: 100%; justify-content: flex-start !important; flex-wrap: wrap; }
     .section-header > button, .section-header > select { flex: 0 0 auto; }
     /* boards em kanban: colunas estreitas pra caber mais na tela */
-    .journey-col, .crm-col { width: 50vw !important; max-width: 190px !important; min-height: 140px !important; flex: 0 0 50vw !important; padding: 8px !important; }
-    .objective-card, .crm-card { padding: 9px !important; margin-bottom: 6px !important; border-radius: 10px !important; }
-    .obj-title, .crm-card-name { font-size: 12.5px !important; margin-bottom: 6px !important; }
+    .journey-col { width: 50vw !important; max-width: 190px !important; min-height: 140px !important; flex: 0 0 50vw !important; padding: 8px !important; }
+    .objective-card { padding: 9px !important; margin-bottom: 6px !important; border-radius: 10px !important; }
+    .obj-title { font-size: 12.5px !important; margin-bottom: 6px !important; }
     .journey-col-head { padding: 8px 10px !important; margin: -8px -8px 9px !important; }
-    .journey-col-headtitle, .crm-col-title { font-size: 12px !important; }
-    .obj-stats, .crm-col-total { font-size: 10px !important; }
+    .journey-col-headtitle { font-size: 12px !important; }
+    .obj-stats { font-size: 10px !important; }
     .objective-card .obj-area { margin-bottom: 5px; }
-    .crm-board, .journey-board { gap: 10px !important; }
+    .journey-board { gap: 10px !important; }
     .fin-tabs, .lib-tabs { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     /* compactar menus e itens para caber mais na tela */
     #sidebar .nav-list li { padding: 8px 12px !important; font-size: 13.5px !important; margin-bottom: 1px; }
@@ -1066,7 +1046,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <li data-section="linha">       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h3.5l2.5-6 3.5 13 2.5-7H21"/></svg></span> Linha do Tempo</li>
         <li data-section="insights">     <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.4v11.2"/><path d="M12 6.4A3 3 0 0 0 6.5 4.9 2.7 2.7 0 0 0 4.4 8.5 2.7 2.7 0 0 0 4 13.3 2.8 2.8 0 0 0 6.8 16.9 2.6 2.6 0 0 0 12 17.4"/><path d="M12 6.4A3 3 0 0 1 17.5 4.9 2.7 2.7 0 0 1 19.6 8.5 2.7 2.7 0 0 1 20 13.3 2.8 2.8 0 0 1 17.2 16.9 2.6 2.6 0 0 1 12 17.4"/><path d="M7.6 9.4c1 .3 1.6 1 1.8 2"/><path d="M16.4 9.4c-1 .3-1.6 1-1.8 2"/></svg></span> Brainstorming</li>
         <li data-section="financas">     <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8a2 2 0 0 1 2-2h10.5"/><rect x="3.5" y="7.5" width="17" height="12.5" rx="2.4"/><path d="M20.5 12.5h-4a1.6 1.6 0 0 0 0 3.2h4"/></svg></span> Finanças</li>
-        <li data-section="comercial">    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16l-6.2 7v6.3l-3.6 1.7v-8z"/></svg></span> Comercial</li>
         <li data-section="treinos">      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7.2" y1="12" x2="16.8" y2="12"/><rect x="2.6" y="8.8" width="3" height="6.4" rx="1"/><rect x="18.4" y="8.8" width="3" height="6.4" rx="1"/><rect x="5.6" y="10" width="2.2" height="4" rx="0.8"/><rect x="16.2" y="10" width="2.2" height="4" rx="0.8"/></svg></span> Saúde</li>
         <li data-section="biblioteca">   <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.4C10.2 5.1 7.8 4.4 5 4.4v13c2.8 0 5.2.7 7 2 1.8-1.3 4.2-2 7-2v-13c-2.8 0-5.2.7-7 2z"/><line x1="12" y1="6.4" x2="12" y2="19.4"/></svg></span> Estudos</li>
         <li data-section="compras">      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 8h11.6l-1 11.4a1.4 1.4 0 0 1-1.4 1.3H8.6a1.4 1.4 0 0 1-1.4-1.3z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></svg></span> Compras</li>
@@ -1087,7 +1066,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       <div id="espiritual"  class="section"></div>
       <div id="insights"    class="section"></div>
       <div id="financas"    class="section"></div>
-      <div id="comercial"   class="section"></div>
       <div id="treinos"     class="section"></div>
       <div id="biblioteca"  class="section"></div>
       <div id="compras"     class="section"></div>
@@ -1133,7 +1111,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     library: "rpg_lib",
     habits: "rpg_habits",
     settings: "rpg_settings",
-    crm: "rpg_crm",
     agenda: "rpg_agenda",
     timeline: "rpg_timeline",
     dayMoods: "rpg_daymoods",
@@ -1207,21 +1184,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       ] },
       habits: [{ id: "h1", name: "Acordar cedo" }, { id: "h2", name: "Academia" }, { id: "h3", name: "Ler" }, { id: "h4", name: "Beber \xE1gua" }],
       habitLog: {}
-    },
-    crm: {
-      stages: [
-        { id: "s1", name: "Poss\xEDvel fake", color: "#64748b" },
-        { id: "s2", name: "Novo lead", color: "#3b82f6" },
-        { id: "s3", name: "Abordado", color: "#06b6d4" },
-        { id: "s4", name: "Reuni\xE3o agendada", color: "#8b5cf6" },
-        { id: "s5", name: "Reuni\xE3o realizada", color: "#a855f7" },
-        { id: "s6", name: "No show", color: "#f43f5e" },
-        { id: "s7", name: "Follow-up", color: "#f59e0b" },
-        { id: "s8", name: "Nutri\xE7\xE3o", color: "#eab308" },
-        { id: "s9", name: "Fechou", color: "#10b981" },
-        { id: "s10", name: "Pagou", color: "#16a34a", won: true }
-      ],
-      leads: []
     },
     timeline: [],
     spiritual: { folders: [
@@ -2419,7 +2381,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <div class="flow-card-meta">${x.nodes.length} etapa(s) \xB7 ${x.edges.length} conex\xE3o(\xF5es) \xB7 ${new Date(x.updatedAt).toLocaleDateString("pt-BR")}</div>
         </div>
         <button class="task-delete" style="opacity:.6" onclick="event.stopPropagation();window._flDelete('${x.id}')">\u{1F5D1}</button>
-      </div>`).join("") + `<button class="crm-add-card" style="margin-top:6px;padding:13px" onclick="window._flNew()">+ Novo fluxograma</button>`;
+      </div>`).join("") + `<button class="fl-add-card" style="margin-top:6px;padding:13px" onclick="window._flNew()">+ Novo fluxograma</button>`;
   }
   function renderFlowEditor(content, fl) {
     flowLive = JSON.parse(JSON.stringify(fl));
@@ -6653,271 +6615,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
   }
 
-  // js/crm.js
-  var crmTab = "kanban";
-  var _dragId = null;
-  function renderCRM(container) {
-    container.innerHTML = `
-    <div class="section-header">
-      <h1><span style="display:inline-flex;vertical-align:-4px;margin-right:8px;color:var(--primary)"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></span>Comercial</h1>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="window._crmStages()">\u2699\uFE0F Etapas</button>
-        <button class="btn btn-primary btn-sm" onclick="window._crmAddLead()">+ Lead</button>
-      </div>
-    </div>
-    <div class="fin-tabs">
-      <button class="fin-tab ${crmTab === "kanban" ? "active" : ""}" onclick="window._crmTab('kanban')">\u{1F5C2} Kanban (CRM)</button>
-      <button class="fin-tab ${crmTab === "dashboard" ? "active" : ""}" onclick="window._crmTab('dashboard')">\u{1F4C8} Dashboard</button>
-    </div>
-    <div id="crm-content"></div>
-  `;
-    window._crmTab = (t) => {
-      crmTab = t;
-      renderCRM(container);
-    };
-    window._crmAddLead = (stageId) => openLeadModal(null, stageId);
-    window._crmEditLead = (id) => openLeadModal(id);
-    window._crmStages = manageStagesModal;
-    window._crmDrag = (ev, id) => {
-      _dragId = id;
-      if (ev?.dataTransfer) ev.dataTransfer.effectAllowed = "move";
-    };
-    window._crmDrop = (ev, stageId) => {
-      ev.preventDefault();
-      if (!_dragId) return;
-      let delta = 0;
-      storage_default.update("crm", (c) => {
-        const wonStage = c.stages.find((s) => s.won);
-        const l = c.leads.find((x) => x.id === _dragId);
-        if (l && l.stageId !== stageId) {
-          const wasWon = l.stageId === (wonStage && wonStage.id);
-          l.stageId = stageId;
-          l.movedAt = (/* @__PURE__ */ new Date()).toISOString();
-          const nowWon = stageId === (wonStage && wonStage.id);
-          if (nowWon && !l.rewarded) { l.rewarded = true; delta = 50; }
-          else if (!nowWon && wasWon && l.rewarded) { l.rewarded = false; delta = -50; }
-        }
-        return c;
-      });
-      _dragId = null;
-      if (delta) addXP(delta, "carreira");
-      renderCRM(container);
-    };
-    window._crmDelLead = (id) => {
-      const crmNow = storage_default.get("crm") || {};
-      const lead = (crmNow.leads || []).find((l) => l.id === id);
-      const wonStage = (crmNow.stages || []).find((s) => s.won);
-      const earned = lead && (lead.rewarded || lead.stageId === (wonStage && wonStage.id)) ? 50 : 0;
-      if (!askDelete(lead && lead.name || "lead", earned, "carreira")) return;
-      storage_default.update("crm", (c) => {
-        c.leads = c.leads.filter((l) => l.id !== id);
-        return c;
-      });
-      renderCRM(container);
-      if (lead && window._showUndo) window._showUndo(`Lead "${lead.name}" exclu\xEDdo`, () => {
-        storage_default.update("crm", (c) => {
-          c.leads.push(lead);
-          return c;
-        });
-        renderCRM(container);
-      });
-    };
-    renderContent4(container);
-  }
-  function renderContent4(container) {
-    const el = document.getElementById("crm-content");
-    if (!el) return;
-    el.innerHTML = crmTab === "kanban" ? renderKanban() : renderDashboard();
-  }
-  function renderKanban() {
-    const crm = storage_default.get("crm") || { stages: [], leads: [] };
-    return `
-    <div class="crm-board">
-      ${crm.stages.map((st) => {
-      const leads = crm.leads.filter((l) => l.stageId === st.id);
-      const total = leads.reduce((s, l) => s + (+l.value || 0), 0);
-      return `
-          <div class="crm-col" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="this.classList.remove('drag-over');window._crmDrop(event,'${st.id}')">
-            <div class="crm-col-head" style="margin:-11px -11px 11px;padding:13px 14px 12px;border-radius:var(--r-lg) var(--r-lg) 0 0;background:linear-gradient(180deg, ${st.color}38, ${st.color}14);border-bottom:1px solid ${st.color}33">
-              <div class="crm-col-title">${st.name} <span class="crm-col-count" style="background:${st.color}22;color:${st.color}">${leads.length}</span></div>
-              <div class="crm-col-total">${total ? fmt2(total) : ""}</div>
-            </div>
-            <div class="crm-col-body">
-              ${leads.map((l) => renderLeadCard(l, st)).join("") || '<div class="crm-empty">Arraste leads aqui</div>'}
-            </div>
-            <button class="crm-add-card" onclick="window._crmAddLead('${st.id}')">+ Lead</button>
-          </div>
-        `;
-    }).join("")}
-    </div>
-  `;
-  }
-  function renderLeadCard(l, st) {
-    return `
-    <div class="crm-card" draggable="true" ondragstart="window._crmDrag(event,'${l.id}')" onclick="window._crmEditLead('${l.id}')">
-      <div class="crm-card-name">${esc3(l.name)}</div>
-      ${l.contact ? `<div class="crm-card-contact">\u{1F4DE} ${esc3(l.contact)}</div>` : ""}
-      <div class="crm-card-foot">
-        ${l.value ? `<span class="crm-card-value">${fmt2(l.value)}</span>` : "<span></span>"}
-        ${l.origin ? `<span class="crm-card-origin">${esc3(l.origin)}</span>` : ""}
-      </div>
-      <button class="crm-card-del" onclick="event.stopPropagation();window._crmDelLead('${l.id}')" title="Excluir">\u2715</button>
-    </div>
-  `;
-  }
-  function renderDashboard() {
-    const crm = storage_default.get("crm") || { stages: [], leads: [] };
-    const total = crm.leads.length;
-    const wonStage = crm.stages.find((s) => s.won) || crm.stages[crm.stages.length - 1];
-    const wonLeads = crm.leads.filter((l) => l.stageId === wonStage?.id);
-    const revenue = wonLeads.reduce((s, l) => s + (+l.value || 0), 0);
-    const conv = total ? Math.round(wonLeads.length / total * 100) : 0;
-    const ticket = wonLeads.length ? revenue / wonLeads.length : 0;
-    const maxCount = Math.max(1, ...crm.stages.map((s) => crm.leads.filter((l) => l.stageId === s.id).length));
-    return `
-    <div class="fin-summary-grid">
-      <div class="fin-stat-card"><div class="fsc-label">\u{1F465} Total de Leads</div><div class="fsc-value">${total}</div></div>
-      <div class="fin-stat-card paid"><div class="fsc-label">\u2705 ${wonStage?.name || "Ganhos"}</div><div class="fsc-value">${wonLeads.length}</div></div>
-      <div class="fin-stat-card income"><div class="fsc-label">\u{1F4B0} Receita</div><div class="fsc-value">${fmt2(revenue)}</div></div>
-      <div class="fin-stat-card balance-pos"><div class="fsc-label">\u{1F4C8} Convers\xE3o</div><div class="fsc-value">${conv}%</div></div>
-      <div class="fin-stat-card"><div class="fsc-label">\u{1F39F} Ticket M\xE9dio</div><div class="fsc-value">${fmt2(ticket)}</div></div>
-    </div>
-    <div class="grid-2" style="margin-top:16px">
-      <div class="card">
-        <div class="card-title">\u{1F53B} Funil de Vendas</div>
-        ${crm.stages.map((s) => {
-      const n = crm.leads.filter((l) => l.stageId === s.id).length;
-      const w = Math.max(8, Math.round(n / maxCount * 100));
-      return `
-            <div class="funnel-row">
-              <div class="funnel-bar" style="width:${w}%;background:${s.color}"></div>
-              <div class="funnel-label"><b>${s.name}</b><span>${n}</span></div>
-            </div>`;
-    }).join("")}
-      </div>
-      <div class="card">
-        <div class="card-title">\u{1F4CA} Convers\xE3o entre etapas</div>
-        ${crm.stages.slice(0, -1).map((s, i) => {
-      const a = crm.leads.filter((l) => l.stageId === s.id).length;
-      const b = crm.leads.filter((l) => l.stageId === crm.stages[i + 1].id).length;
-      const pct = a ? Math.round(b / a * 100) : 0;
-      return `<div class="conv-row"><span>${s.name} \u2192 ${crm.stages[i + 1].name}</span><b>${pct}%</b></div>`;
-    }).join("")}
-        <div style="margin-top:12px" class="card-title">\u{1F310} Leads por Origem</div>
-        ${originBreakdown(crm.leads)}
-      </div>
-    </div>
-  `;
-  }
-  function originBreakdown(leads) {
-    const map = {};
-    leads.forEach((l) => {
-      const o = l.origin || "Sem origem";
-      map[o] = (map[o] || 0) + 1;
-    });
-    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
-    if (!entries.length) return '<div class="empty-state" style="padding:16px">Nenhum lead ainda.</div>';
-    return entries.map(([o, n]) => `<div class="conv-row"><span>${esc3(o)}</span><b>${n}</b></div>`).join("");
-  }
-  function openLeadModal(id, stageId) {
-    const crm = storage_default.get("crm") || { stages: [], leads: [] };
-    const lead = id ? crm.leads.find((l) => l.id === id) : null;
-    const stageOpts = crm.stages.map((s) => `<option value="${s.id}" ${(lead ? lead.stageId : stageId) === s.id ? "selected" : ""}>${s.name}</option>`).join("");
-    window._modalContent(`
-    <div class="modal-title">${lead ? "\u270F\uFE0F Editar Lead" : "\u2795 Novo Lead"}</div>
-    <div class="form-group"><label>Nome / Empresa</label><input id="lead-name" value="${esc3(lead?.name)}" placeholder="Ex: Jo\xE3o da Silva"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Contato</label><input id="lead-contact" value="${esc3(lead?.contact)}" placeholder="WhatsApp / email"></div>
-      <div class="form-group"><label>Valor (R$)</label><input type="number" id="lead-value" value="${lead?.value ?? ""}" placeholder="0,00"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Origem</label><input id="lead-origin" value="${esc3(lead?.origin)}" placeholder="Instagram, Indica\xE7\xE3o..."></div>
-      <div class="form-group"><label>Etapa</label><select id="lead-stage">${stageOpts}</select></div>
-    </div>
-    <div class="form-group"><label>Observa\xE7\xF5es</label><textarea id="lead-notes" placeholder="Anota\xE7\xF5es sobre o lead">${esc3(lead?.notes)}</textarea></div>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="window._crmSaveLead('${id || ""}')">${lead ? "Salvar" : "Criar Lead"}</button>
-    ${lead ? `<button class="btn btn-ghost btn-sm" style="color:var(--red);margin-top:8px" onclick="window._crmDelLead('${id}');window._closeModal()">\u{1F5D1} Excluir Lead</button>` : ""}
-  `);
-    window._crmSaveLead = (eid) => {
-      const name = document.getElementById("lead-name").value.trim();
-      if (!name) return;
-      const data = {
-        name,
-        contact: document.getElementById("lead-contact").value.trim(),
-        value: parseFloat(document.getElementById("lead-value").value) || 0,
-        origin: document.getElementById("lead-origin").value.trim(),
-        stageId: document.getElementById("lead-stage").value,
-        notes: document.getElementById("lead-notes").value.trim()
-      };
-      let wonNow = false;
-      storage_default.update("crm", (c) => {
-        const wonStage = c.stages.find((s) => s.won);
-        if (eid) {
-          const l = c.leads.find((x) => x.id === eid);
-          if (l) {
-            const wasWon = l.stageId === wonStage?.id;
-            Object.assign(l, data);
-            if (!wasWon && data.stageId === wonStage?.id && !l.rewarded) { wonNow = true; l.rewarded = true; }
-          }
-        } else {
-          const nl = { id: Date.now().toString(), ...data, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
-          if (data.stageId === wonStage?.id) { wonNow = true; nl.rewarded = true; }
-          c.leads.push(nl);
-        }
-        return c;
-      });
-      if (wonNow) addXP(50, "carreira");
-      window._closeModal();
-      const cont = document.getElementById("comercial");
-      if (cont) renderCRM(cont);
-    };
-  }
-  function manageStagesModal() {
-    const crm = storage_default.get("crm") || { stages: [], leads: [] };
-    window._modalContent(`
-    <div class="modal-title">\u2699\uFE0F Etapas do Funil</div>
-    <p style="color:var(--muted);font-size:12px;margin-bottom:8px">Uma etapa por linha, na ordem do seu fluxo. A \xFAltima \xE9 considerada "venda fechada".</p>
-    <textarea id="stages-text" style="min-height:200px">${crm.stages.map((s) => s.name).join("\n")}</textarea>
-    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="window._crmSaveStages()">Salvar Etapas</button>
-  `);
-    window._crmSaveStages = () => {
-      const names = document.getElementById("stages-text").value.split("\n").map((s) => s.trim()).filter(Boolean);
-      if (!names.length) return;
-      const palette = ["#64748b", "#3b82f6", "#06b6d4", "#8b5cf6", "#a855f7", "#f43f5e", "#f59e0b", "#eab308", "#10b981", "#16a34a"];
-      storage_default.update("crm", (c) => {
-        const oldByName = {};
-        c.stages.forEach((s) => oldByName[s.name] = s);
-        const newStages = names.map((name, i) => {
-          const ex = oldByName[name];
-          return { id: ex?.id || "s" + Date.now() + i, name, color: ex?.color || palette[i % palette.length] };
-        });
-        newStages[newStages.length - 1].won = true;
-        const validIds = new Set(newStages.map((s) => s.id));
-        c.leads.forEach((l) => {
-          if (!validIds.has(l.stageId)) l.stageId = newStages[0].id;
-        });
-        c.stages = newStages;
-        return c;
-      });
-      window._closeModal();
-      const cont = document.getElementById("comercial");
-      if (cont) renderCRM(cont);
-    };
-  }
-  function fmt2(v) {
-    return "R$ " + (+v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  function esc3(s) {
-    return (s == null ? "" : String(s)).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
-
   // js/sync.js
   var CFG_KEY = "rpg_sync_cfg";
   var DEFAULT_CFG = {
     url: "https://esuvnbgxoktjjutmwwhs.supabase.co",
     key: "sb_publishable_BvVKOAzUthKxk4mNvHum9A_7cDu7Lcr"
   };
-  var DATA_KEYS = ["rpg_char", "rpg_tasks", "rpg_notes", "rpg_obj", "rpg_insights", "rpg_fin", "rpg_events", "rpg_rewards", "rpg_shop", "rpg_lib", "rpg_habits", "rpg_settings", "rpg_crm", "rpg_agenda", "rpg_timeline", "rpg_daymoods", "rpg_spiritual", "rpg_meals", "rpg_shopcats", "rpg_flows"];
+  var DATA_KEYS = ["rpg_char", "rpg_tasks", "rpg_notes", "rpg_obj", "rpg_insights", "rpg_fin", "rpg_events", "rpg_rewards", "rpg_shop", "rpg_lib", "rpg_habits", "rpg_settings", "rpg_agenda", "rpg_timeline", "rpg_daymoods", "rpg_spiritual", "rpg_meals", "rpg_shopcats", "rpg_flows"];
   function getSyncCfg() {
     try {
       return { ...DEFAULT_CFG, ...JSON.parse(localStorage.getItem(CFG_KEY) || "{}") };
@@ -7626,7 +7330,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     };
   }
 
-  var SECTIONS =["dashboard", "personagem", "agenda", "notas", "objetivos", "linha", "insights", "financas", "comercial", "treinos", "biblioteca", "compras", "recompensas"];
+  var SECTIONS =["dashboard", "personagem", "agenda", "notas", "objetivos", "linha", "insights", "financas", "treinos", "biblioteca", "compras", "recompensas"];
   var RENDERERS = {
     personagem: renderPersonagem,
     agenda: renderAgenda,
@@ -7636,7 +7340,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     espiritual: renderEspiritual,
     insights: renderKnowledge,
     financas: renderFinance,
-    comercial: renderCRM,
     treinos: renderHabits2,
     biblioteca: renderLibrary,
     compras: renderShopping,
@@ -7883,7 +7586,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     }
     const greetHour = (/* @__PURE__ */ new Date()).getHours();
     const greetWord = greetHour < 12 ? "Bom dia" : greetHour < 18 ? "Boa tarde" : "Boa noite";
-    const crmD = storage_default.get("crm") || { leads: [] };
     const _libBooks = ((storage_default.get("library") || {}).books) || [];
     const readingBook = _libBooks.find((b) => b.status === "reading");
     const nextEv = compromissos[0];
@@ -7962,7 +7664,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
           <div class="rv-bills-total">Total <b>${fmtMoney(_upTotal)}</b></div>
         </div>` : ""}
         <div class="rv-card" onclick="window._navSection('financas')"><div class="rv-k">Finan\xE7as \u00b7 hoje</div><div class="rv-v">${fmtMoney(despTotal)}</div><div class="rv-s">${despesas.length} gasto(s) hoje</div></div>
-        <div class="rv-card" onclick="window._navSection('comercial')"><div class="rv-k">Comercial</div><div class="rv-v">${crmD.leads.length} <span class="rv-u">leads</span></div></div>
         <div class="rv-card" onclick="window._navSection('agenda')"><div class="rv-k">Pr\xF3ximo compromisso</div><div class="rv-v-sm">${nextEv ? (nextEv.allDay ? "dia" : nextEv.time || "--:--") + " \u2014 " + esc(nextEv.name) : "Nada hoje"}</div></div>
         ${readingBook ? `<div class="rv-card rv-accent" onclick="window._navSection('biblioteca')"><div class="rv-k">Lendo agora</div><div class="rv-v-sm" style="color:#fff">${esc(readingBook.title)}</div><div class="rv-bar"><div class="rv-bar-fill" style="width:${readingBook.progress || 0}%"></div></div></div>` : ""}
         <div class="rv-card rv-idea" onclick="window._openIdeaPopup()">
