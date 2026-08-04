@@ -6616,7 +6616,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
 
   // js/sync.js
-  var APP_VERSION = "v66";
+  var APP_VERSION = "v67";
   var CFG_KEY = "rpg_sync_cfg";
   var DEFAULT_CFG = {
     url: "https://esuvnbgxoktjjutmwwhs.supabase.co",
@@ -6646,8 +6646,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
   // Usa a chave publicável nas chamadas de dados. O access_token do usuário expira em 1h
   // e derrubava o sync silenciosamente (401); a identidade continua vindo do login (code = user.id).
+  // Assina as chamadas com o token DO USUÁRIO quando ele está válido — é o que
+  // permite a tranca no banco (RLS) deixar cada conta ver só a própria linha.
+  // Cai na chave publicável só enquanto não há sessão (nunca deixa o sync mudo).
   function headers(c) {
-    return { "apikey": c.key, "Authorization": `Bearer ${c.key}`, "Content-Type": "application/json" };
+    var tok = (typeof authTokenValido === "function" && authTokenValido()) || c.key;
+    return { "apikey": c.key, "Authorization": `Bearer ${tok}`, "Content-Type": "application/json" };
   }
   // Registra o resultado da última sincronização pra falha nunca mais passar despercebida.
   function setSyncErr(msg) {
@@ -6676,11 +6680,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const stamp = localMut || (/* @__PURE__ */ new Date()).toISOString();
     const body = [{ code: c.code, data: dataBlob(), updated_at: stamp }];
     try {
-      const res = await fetch(`${url}/rest/v1/vaults?on_conflict=code`, {
+      await authGarantirToken();
+      const enviar = () => fetch(`${url}/rest/v1/vaults?on_conflict=code`, {
         method: "POST",
         headers: { ...headers(c), "Prefer": "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify(body)
       });
+      let res = await enviar();
+      // 401/403 = token venceu no meio do caminho: renova uma vez e repete.
+      if ((res.status === 401 || res.status === 403) && await authRefresh()) res = await enviar();
       if (!res.ok) { const m = `Erro ao enviar (${res.status})`; setSyncErr(m); setSyncTry("envio", false, m); return { ok: false, msg: m }; }
       setSyncErr("");
       setSyncTry("envio", true, "");
@@ -6700,8 +6708,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     if (!syncConfigured()) return { ok: false, changed: false, msg: "Sincroniza\xE7\xE3o n\xE3o configurada." };
     const url = normUrl(c.url);
     try {
-      const res = await fetch(`${url}/rest/v1/vaults?code=eq.${encodeURIComponent(c.code)}&select=data,updated_at`, { headers: headers(c) });
-      if (!res.ok) { const m = `Erro ao baixar (${res.status})`; setSyncErr(m); return { ok: false, changed: false, msg: m }; }
+      await authGarantirToken();
+      const baixar = () => fetch(`${url}/rest/v1/vaults?code=eq.${encodeURIComponent(c.code)}&select=data,updated_at`, { headers: headers(c) });
+      let res = await baixar();
+      if ((res.status === 401 || res.status === 403) && await authRefresh()) res = await baixar();
+      if (!res.ok) { const m = `Erro ao baixar (${res.status})`; setSyncErr(m); setSyncTry("download", false, m); return { ok: false, changed: false, msg: m }; }
       const rows = await res.json();
       if (!Array.isArray(rows)) return { ok: false, changed: false, msg: "Resposta inesperada do servidor." };
       if (!rows.length) return { ok: true, changed: false, msg: "Nenhum dado na nuvem ainda (este c\xF3digo \xE9 novo)." };
@@ -6780,6 +6791,25 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
       else if (/password/i.test(msg)) msg = "Senha muito curta (m\xEDnimo 6 caracteres).";
       return { ok: false, msg };
     } catch (e) { return { ok: false, msg: "Falha de rede. Voc\xEA est\xE1 online?" }; }
+  }
+  /** Token do usuário só se ainda estiver dentro da validade (com 60s de folga). */
+  function authTokenValido() {
+    var s = authSession();
+    if (!s || !s.access_token || !s.expires_at) return "";
+    return Date.now() < (s.expires_at - 6e4) ? s.access_token : "";
+  }
+  /**
+   * Renova o token ANTES de expirar. Sem isto, a sessão morre em 1h e todas as
+   * chamadas passam a levar 401 — foi o que derrubou o sync entre a v58 e a v63.
+   * Uma promessa só por vez: várias chamadas simultâneas não disparam N refreshes.
+   */
+  var _refreshEmVoo = null;
+  async function authGarantirToken() {
+    var s = authSession();
+    if (!s || !s.refresh_token) return false;
+    if (authTokenValido()) return true;
+    if (!_refreshEmVoo) _refreshEmVoo = authRefresh().finally(function () { _refreshEmVoo = null; });
+    return _refreshEmVoo;
   }
   async function authRefresh() {
     var s = authSession(); if (!s || !s.refresh_token) return false;
@@ -6863,6 +6893,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     const c = getSyncCfg();
     const url = normUrl(c.url);
     try {
+      await authGarantirToken();
       const res = await fetch(`${url}/rest/v1/vaults?code=eq.${encodeURIComponent(c.code)}&select=updated_at`, { headers: headers(c) });
       if (!res.ok) return;
       const rows = await res.json();
@@ -7929,6 +7960,9 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   // Atualização automática (quase em tempo real): a cada 20s enquanto o app está visível,
   // ao voltar o foco e ao reabrir a aba/app.
   setInterval(_syncPollTick, 2e4);
+  // Mantém a sessão viva sozinha: a cada 10 min confere a validade e renova
+  // antes de vencer (o token dura 1h). Sem isto o app "loga" mas o sync morre.
+  setInterval(function () { if (!document.hidden) authGarantirToken(); }, 6e5);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) _syncPollTick(); });
   window.addEventListener("focus", _syncPollTick);
   function showLevelUp2(char) {
