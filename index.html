@@ -543,6 +543,9 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 5px
 /* ================= KNOWLEDGE / INSIGHTS ================= */
 .knowledge-layout { display:grid; grid-template-columns:246px 1fr; gap:18px; height:calc(100vh - 120px); }
 .knowledge-sidebar { overflow-y:auto; }
+/* Voltar da nota para a lista — só existe no celular (no PC os dois painéis convivem) */
+.kn-painel-nota { display:flex; flex-direction:column; }
+.kn-voltar { display:none; align-items:center; gap:6px; background:none; border:none; color:var(--primary-d); font-size:14px; font-weight:600; cursor:pointer; padding:0 0 10px; }
 .knowledge-note-item { padding:9px 13px; border-radius:var(--r-sm); cursor:pointer; font-size:13px; transition:all .15s ease; margin-bottom:4px; border-left:3px solid transparent; }
 .knowledge-note-item:hover { background:var(--surface2); }
 .knowledge-note-item.active { background:var(--surface2); border-left-color:var(--primary); }
@@ -724,9 +727,6 @@ html[data-theme="dark"] .lib-tab.active { background:var(--primary); border-colo
 .conv-row:last-child { border-bottom:none; }
 
 /* ================= INSIGHTS TAG CLOUD ================= */
-.kn-tagcloud { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px; padding-bottom:11px; border-bottom:1px solid var(--border); }
-.kn-tagchip { font-size:11px; background:rgba(66,178,221,.12); color:var(--primary-d); padding:3px 9px; border-radius:100px; cursor:pointer; transition:all .15s ease; }
-.kn-tagchip:hover { background:var(--primary); color:#fff; }
 
 /* ================= AGENDA: ROTINA + HÁBITOS ================= */
 .routine-table { width:100%; border-collapse:collapse; min-width:640px; }
@@ -830,6 +830,13 @@ html[data-theme="dark"] .levelup-card button { background: var(--primary); }
   .grid-3, .grid-2, .attrs-grid, .dash-today { grid-template-columns: 1fr; }
   .fin-summary-grid { grid-template-columns: 1fr 1fr; }
   .notes-layout, .knowledge-layout, .notes-right { grid-template-columns: 1fr; height: auto; min-height: 0; }
+  /* Brainstorming no celular: uma tela por vez. A lista de pastas OU a nota
+     aberta — nunca a nota jogada lá embaixo, depois de todas as #. */
+  .knowledge-layout { display:block; }
+  .knowledge-layout > .kn-painel-nota { display:none; }
+  .knowledge-layout.kn-ver-nota > .knowledge-sidebar { display:none; }
+  .knowledge-layout.kn-ver-nota > .kn-painel-nota { display:flex; min-height:calc(100dvh - 210px); }
+  .knowledge-layout.kn-ver-nota .kn-voltar { display:inline-flex; }
   .cards-grid, .rewards-grid, .books-grid { grid-template-columns: 1fr; }
 }
 
@@ -3761,6 +3768,15 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   var activeNoteId = null;
   var isEditing = false;
   var knTab = "notas";
+  // No celular o Brain funciona como o Notas do iPhone: ou a lista de pastas,
+  // ou a nota aberta. "lista" | "nota" — no PC não muda nada (os dois convivem).
+  var knVista = "lista";
+  function _knAplicarVista() {
+    const lay = document.querySelector(".knowledge-layout");
+    if (lay) lay.classList.toggle("kn-ver-nota", knVista === "nota");
+  }
+  window._knVoltar = () => { knVista = "lista"; _knAplicarVista(); };
+
   function renderKnowledge(container) {
     window._knTab = (t) => { knTab = t; renderKnowledge(container); };
     container.innerHTML = `
@@ -3781,7 +3797,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         <div class="card-title">Notas</div>
         <div id="kn-note-list"></div>
       </div>
-      <div class="card" style="display:flex;flex-direction:column">
+      <div class="card kn-painel-nota">
         <div id="kn-editor"></div>
       </div>
     </div>` : `
@@ -3792,11 +3808,12 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   `;
     window._newKnNote = () => createNote();
     window._knSearch = (q) => renderNoteList(q);
-    window._openKnNote = (id) => openNote(id);
+    window._openKnNote = (id) => openNote(id, true);
     window._deleteKnNote = (id) => deleteNote(id);
     window._saveKnNote = () => saveNote();
     window._toggleView = () => toggleView();
     if (knTab === "notas") {
+      knVista = "lista";
       renderNoteList();
       if (!activeNoteId) {
         const notes = storage_default.get("knowledge") || [];
@@ -3829,8 +3846,6 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         filtered = notes.filter((n) => (n.title || "").toLowerCase().includes(q) || (n.content || "").toLowerCase().includes(q) || (n.tags || []).some((t) => t.toLowerCase().includes(q)));
       }
     }
-    const allTags = [...new Set(notes.flatMap((n) => n.tags || []))].sort();
-    const tagCloud = allTags.length ? `<div class="kn-tagcloud">${allTags.map((t) => `<span class="kn-tagchip" onclick="window._knSearchTag('${t}')">#${t}</span>`).join("")}</div>` : "";
     const el = document.getElementById("kn-note-list");
     if (!el) return;
     window._knOpen = window._knOpen || {};
@@ -3851,13 +3866,8 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
         return `<div class="kn-folder"><div class="kn-folder-head" onclick="window._knFolderToggle('${fe}')"><span class="kn-chev ${open ? "open" : ""}">\u203A</span><span class="kn-folder-name">${f === "\u2014 Sem pasta" ? f : "#" + f}</span><span class="kn-folder-count">${groups[f].length}</span></div><div class="kn-folder-body" style="${open ? "" : "display:none"}">${items}</div></div>`;
       }).join("");
     }
-    el.innerHTML = tagCloud + body;
+    el.innerHTML = body;
     window._knFolderToggle = (f) => { window._knOpen[f] = window._knOpen[f] !== true; renderNoteList(document.getElementById("kn-search")?.value || ""); };
-    window._knSearchTag = (t) => {
-      const inp = document.getElementById("kn-search");
-      if (inp) inp.value = "#" + t;
-      renderNoteList("#" + t);
-    };
   }
   function createNote() {
     const note = {
@@ -3871,10 +3881,11 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     storage_default.update("knowledge", (ns) => [note, ...ns]);
     activeNoteId = note.id;
     renderNoteList();
-    openNote(note.id);
+    openNote(note.id, true);
   }
-  function openNote(id) {
+  function openNote(id, veioDoUsuario) {
     activeNoteId = id;
+    if (veioDoUsuario) knVista = "nota";
     const notes = storage_default.get("knowledge") || [];
     const note = notes.find((n) => n.id === id);
     if (!note) return;
@@ -3882,11 +3893,13 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
     renderNoteList();
     renderEditor(note);
     drawGraph();
+    _knAplicarVista();
   }
   function renderEditor(note) {
     const el = document.getElementById("kn-editor");
     if (!el) return;
     el.innerHTML = `
+    <button class="kn-voltar" onclick="window._knVoltar()">‹ Notas</button>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <input class="knowledge-editor-title" id="kn-title" value="${escHtml(note.title)}" placeholder="T\xEDtulo da nota">
       <div style="display:flex;gap:6px">
@@ -6616,7 +6629,7 @@ body { background-image: radial-gradient(1200px 620px at 12% -12%, rgba(124,131,
   }
 
   // js/sync.js
-  var APP_VERSION = "v67";
+  var APP_VERSION = "v68";
   var CFG_KEY = "rpg_sync_cfg";
   var DEFAULT_CFG = {
     url: "https://esuvnbgxoktjjutmwwhs.supabase.co",
